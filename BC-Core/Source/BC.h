@@ -49,6 +49,8 @@
 
 // ---- Physics ----
 #include "Physics/Physics.h"
+#include "Physics/PhysicsSystem.h"
+#include "Physics/PhysicsWrapper.h"
 
 // ---- Project ----
 #include "Project/Project.h"

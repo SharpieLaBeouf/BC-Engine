@@ -4,6 +4,8 @@
 #include "Scene.h"
 #include "Entity.h"
 
+#include "Physics/PhysicsSystem.h"
+
 // C++ Standard Library Headers
 #include <memory>
 #include <vector>
@@ -71,6 +73,8 @@ namespace BC
         bool IsPaused() const { return m_IsPaused; }
         void SetPaused(bool paused) { m_IsPaused = paused; }
 
+        bool IsPhysicsSimulating() const { return m_PhysicsSimulating; }
+
         const std::vector<std::shared_ptr<Scene>>& GetActiveScenes() const { return m_ActiveScenes; }
 
         template<typename... Components>
@@ -94,7 +98,11 @@ namespace BC
         bool m_IsSimulating = false;
         bool m_IsPaused = false;
 
-        std::vector<std::shared_ptr<Scene>> m_ActiveScenes;
+        bool m_PhysicsSimulating = false;
+
+        std::vector<std::shared_ptr<Scene>> m_ActiveScenes = {};
+
+        std::unique_ptr<PhysicsSystem> m_PhysicsSystem = nullptr;
 
     };
     
