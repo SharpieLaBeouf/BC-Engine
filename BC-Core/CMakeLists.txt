@@ -44,11 +44,12 @@ target_include_directories(BCEngineCore
         ${PROJECT_SOURCE_DIR}/External/imguizmo
         ${PROJECT_SOURCE_DIR}/External/imgui-node-editor
         ${PROJECT_SOURCE_DIR}/External/miniaudio
-        ${PROJECT_SOURCE_DIR}/External/physx
         ${PROJECT_SOURCE_DIR}/External/spdlog/include
         ${PROJECT_SOURCE_DIR}/External/stb
         ${PROJECT_SOURCE_DIR}/External/tinyfiledialogs
         ${PROJECT_SOURCE_DIR}/External/yaml-cpp/include
+        
+        ${PHYSX_INCLUDE_DIR}
 
         ${LIBCLANG_INCLUDE_DIR}
         ${Vulkan_INCLUDE_DIR}

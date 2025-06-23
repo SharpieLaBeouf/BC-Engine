@@ -58,7 +58,8 @@ namespace BC
         BC_CORE_TRACE("VulkanCore::Init: Created Swap Chain Frames in Flight.");
 
         BC_THROW(m_Instance,       "VulkanCore::Init: Instance Not Valid");
-        BC_THROW(m_DebugMessenger, "VulkanCore::Init: Debug Messenger Not Valid");
+        if (Util::s_EnableValidationLayer)
+            BC_THROW(m_DebugMessenger, "VulkanCore::Init: Debug Messenger Not Valid");
         BC_THROW(m_Surface,        "VulkanCore::Init: Surface Not Valid");
         BC_THROW(m_LogicalDevice,  "VulkanCore::Init: Logical Device Not Valid");
 

@@ -149,7 +149,10 @@ set_target_properties(miniaudio_vocoder_node PROPERTIES FOLDER "External/miniaud
 # ---------------------------------------------------------------------------
 # External: PhysX
 # ---------------------------------------------------------------------------
-set(PHYSX_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/External/physx")
+set(PHYSX_INCLUDE_DIR 
+    "${PROJECT_SOURCE_DIR}/External/physx"
+    "${PROJECT_SOURCE_DIR}/External/physx/physx"
+)
 set(PHYSX_LIB_DIR_BASE "${PROJECT_SOURCE_DIR}/External/bin/physx")
 
 set(PHYSX_DEBUG_LIB_DIR "${PHYSX_LIB_DIR_BASE}/${PLATFORM}/debug")
