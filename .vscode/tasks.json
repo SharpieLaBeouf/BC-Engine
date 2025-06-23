@@ -1,0 +1,61 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build BCEditor-Win-Debug",
+            "type": "shell",
+            "command": "${workspaceFolder}/Tools/Win/build_debug.bat",
+            "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}/Tools/Win"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "build BCEditor-Win-Release",
+            "type": "shell",
+            "command": "${workspaceFolder}/Tools/Win/build.bat",
+            "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}/Tools/Win"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "build BCEditor-Linux-Debug",
+            "type": "shell",
+            "command": "${workspaceFolder}/Tools/Linux/build_debug.sh",
+            "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}/Tools/Linux"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "build BCEditor-Linux-Release",
+            "type": "shell",
+            "command": "${workspaceFolder}/Tools/Linux/build.sh",
+            "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}/Tools/Linux"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
