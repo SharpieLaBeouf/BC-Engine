@@ -52,7 +52,17 @@ namespace BC
         };
         result = CreateSwapchain(swapchain_spec);
         BC_THROW(result == VK_SUCCESS, "VulkanCore::Init: Failed to Create Swapchain.");
-        BC_CORE_TRACE("VulkanCore::Init: Created Swapchain.");
+
+        std::string present_mode;
+        switch(swapchain_spec.PresentMode)
+        {
+            default:                                present_mode = "";              break;
+            case VK_PRESENT_MODE_IMMEDIATE_KHR:     present_mode = "Immediate";     break;
+            case VK_PRESENT_MODE_MAILBOX_KHR:       present_mode = "Mailbox";       break;
+            case VK_PRESENT_MODE_FIFO_KHR:          present_mode = "FIFO";          break;
+            case VK_PRESENT_MODE_FIFO_RELAXED_KHR:  present_mode = "FIFO Relaxed";  break;
+        }
+        BC_CORE_TRACE("VulkanCore::Init: Created Swapchain - Present Mode {}.", present_mode);
 
         // 7. SwapChainFramesInFlight
         result = CreateSwapChainFramesInFlight();
