@@ -33,11 +33,23 @@ namespace BC
 
         JobCounter() = default;
         ~JobCounter() = default;
+        
         JobCounter(const JobCounter& other) = delete;
-        JobCounter(JobCounter&& other) = default;
+        JobCounter(JobCounter&& other)
+        {
+            m_Count.store(other.m_Count.load()); other.m_Count.store(0);
+        }
         
         JobCounter& operator=(const JobCounter& other) = delete;
-        JobCounter& operator=(JobCounter&& other) = default;
+        JobCounter& operator=(JobCounter&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            m_Count.store(other.m_Count.load()); other.m_Count.store(0);
+            
+            return *this;
+        }
 
         void Increment(uint32_t value = 1);
         void Decrement();

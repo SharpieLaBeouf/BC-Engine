@@ -143,14 +143,14 @@ namespace BC
 		///
 		/// Each counter tracks the capture of scene data for (frame_index + 2),
 		/// used to prepare render commands ahead of time.
-		std::array<JobCounter, 3> m_SceneSnapshotJobCounters;
+		std::vector<JobCounter> m_SceneSnapshotJobCounters = {};
 		
 		/// @brief Triple-buffered job counters for render command preparation.
 		///
 		/// Each counter tracks completion of render command preparation for 
 		/// (frame_index + 1), which corresponds to the scene captured last frame
 		/// and scheduled for rendering in the next frame.
-		std::array<JobCounter, 3> m_PrepareRenderJobCounters;
+		std::vector<JobCounter> m_PrepareRenderJobCounters = {};
     
 	private:
 

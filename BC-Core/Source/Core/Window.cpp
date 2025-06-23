@@ -146,6 +146,8 @@ namespace BC
         auto physical_device = Application::GetVulkanCore()->GetPhysicalDevice();
         auto surface = Application::GetVulkanCore()->GetSurface();
         auto capabilities = Swapchain::GetSwapchainSupport(physical_device, surface);
+        Swapchain::s_MinImageCount = std::max<uint32_t>(capabilities.Capabilities.minImageCount, 2);
+        BC_THROW(Swapchain::s_MinImageCount >= 2, "Window::WindowResizeCallback: Min Image Count Must Be Atleast 2.");
         SwapchainSpecification swapchain_spec = 
         {
             .ImageCount = static_cast<uint8_t>(Swapchain::s_MinImageCount + 1),

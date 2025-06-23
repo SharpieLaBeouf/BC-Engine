@@ -100,6 +100,10 @@
         "span": "cpp",
         "stack": "cpp",
         "valarray": "cpp",
-        "barrier": "cpp"
+        "barrier": "cpp",
+        "codecvt": "cpp",
+        "cwctype": "cpp",
+        "string_view": "cpp",
+        "semaphore": "cpp"
     }
 }

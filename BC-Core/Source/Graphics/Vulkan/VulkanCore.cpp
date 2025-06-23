@@ -41,6 +41,8 @@ namespace BC
 
         // 6. Swapchain
         auto capabilities = Swapchain::GetSwapchainSupport(GetPhysicalDevice(), GetSurface());
+        Swapchain::s_MinImageCount = std::max<uint32_t>(capabilities.Capabilities.minImageCount, 2);
+        BC_THROW(Swapchain::s_MinImageCount >= 2, "VulkanCore::Init: Min Image Count Must Be Atleast 2.");
         SwapchainSpecification swapchain_spec = 
         {
             .ImageCount = static_cast<uint8_t>(Swapchain::s_MinImageCount + 1),

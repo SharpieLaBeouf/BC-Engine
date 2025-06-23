@@ -53,6 +53,9 @@ namespace BC
         
         m_VulkanCore = std::make_unique<VulkanCore>();
         m_VulkanCore->Init(m_Specification.Name.c_str(), m_Window->GetNativeWindow());
+
+        m_SceneSnapshotJobCounters.resize(Swapchain::s_MinImageCount + 1);
+        m_PrepareRenderJobCounters.resize(Swapchain::s_MinImageCount + 1);
         
         m_GUILayer = new GUILayer();
         PushOverlay(m_GUILayer);
