@@ -55,7 +55,7 @@ namespace BC
 		m_PhysicsScene = PxGetPhysics().createScene(scene_desc);
 
     #ifdef _DEBUG
-		PxPvdSceneClient* pvd_client = m_PhysxScene->getScenePvdClient();
+		PxPvdSceneClient* pvd_client = m_PhysicsScene->getScenePvdClient();
 		if (pvd_client)
 		{
 			pvd_client->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
