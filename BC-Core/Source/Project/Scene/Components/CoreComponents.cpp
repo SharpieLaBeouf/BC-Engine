@@ -935,16 +935,21 @@ namespace BC
         // Check if the name is already used
         auto check_names = [&](const std::string& test_name) -> bool 
         {
-            if (HasParent()) 
+            auto project = Application::GetProject();
+            if (!project)
+                return false;
+
+            Entity parent_entity = project->GetSceneManager()->GetEntity(m_Parent);
+            if (parent_entity) 
             {
-                for (const auto& uuid : m_Children) 
+                for (const auto& child_guid : parent_entity.GetComponent<MetaComponent>().GetChildrenGUID()) 
                 {
-                    if (uuid == m_EntityID)
+                    if (child_guid == m_EntityID)
                     {
                         continue;
                     }
 
-                    Entity child_entity = Application::GetProject()->GetSceneManager()->GetEntity(uuid);
+                    Entity child_entity = Application::GetProject()->GetSceneManager()->GetEntity(child_guid);
                     if (!child_entity)
                     {
                         continue; // Ensure entity is valid

@@ -135,6 +135,11 @@ namespace BC
         void AddSceneTemplate(std::shared_ptr<Scene> scene);
         void AddSceneTemplate(GUID scene_id, const std::filesystem::path& scene_file_path);
 
+        void SetActiveScene(GUID scene_id);
+        void SetActiveScene(const std::string& scene_name);
+
+        std::shared_ptr<Scene> GetActiveScene();
+
         void Serialise(YAML::Emitter& out);
         void Deserialise(const YAML::Node& data, const std::filesystem::path& project_directory);
 
@@ -157,6 +162,9 @@ namespace BC
 
         /// @brief This holds relative paths to all scenes in Project/Scenes folder
         std::unordered_map<GUID, std::filesystem::path> m_SceneFilePaths = {};
+
+        /// @brief This is the reference to the Target Scene for New Entities and Entity Instantiations
+        GUID m_ActiveScene = NULL_GUID;
 
         /// @brief This is the Scene ID of the Scene that will be instantiated on start
         GUID m_EntryScene = NULL_GUID;

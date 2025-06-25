@@ -33,10 +33,12 @@ namespace BC
         Scene& operator=(const Scene& other);
         Scene& operator=(Scene&& other);
 
-		Entity CreateEntity(const std::string& name = "");
-		Entity CreateEntity(GUID entity_guid, const std::string& name = "");
+		Entity CreateEntity(const std::string& name = "", GUID parent_guid = NULL_GUID);
+		Entity CreateEntity(GUID entity_guid, const std::string& name = "", GUID parent_guid = NULL_GUID);
 
 		// TODO: Entity InstantiatePrefab(std::shared_ptr<Prefab> prefab, std::optional<TransformComponent> transform = std::nullopt, const GUID& parent_uuid = NULL_GUID);
+
+        void DuplicateEntity(const Entity& entity);
 
         void DestroyEntity(const Entity& entity);
         

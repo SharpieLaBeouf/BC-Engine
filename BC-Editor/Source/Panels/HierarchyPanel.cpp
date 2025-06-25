@@ -3,12 +3,6 @@
 
 namespace BC
 {
-    ImVec2 HierarchyPanel::s_DraggingSourceMin = {};
-    ImVec2 HierarchyPanel::s_DraggingSourceMax = {};
-
-    Entity HierarchyPanel::s_SourceDragDropEntity = {};
-    Entity HierarchyPanel::s_TargetDragDropEntity = {};
-
     void HierarchyPanel::OnRenderGUI()
     {
         if (m_Active)
@@ -19,29 +13,162 @@ namespace BC
                 ImGui::PopStyleVar();
                 ImGui::BeginChild("HierarchyChildArea");
 
-                ImVec2 min = ImGui::GetCursorScreenPos();
-                ImVec2 max = ImVec2(min.x + ImGui::GetContentRegionAvail().x, min.y + ImGui::GetContentRegionAvail().y);
-                ImGui::GetWindowDrawList()->AddRect(min, max, IM_COL32(255, 0, 0, 255));
-
-                auto scene_manager = Application::GetProject()->GetSceneManager();
-                
-                for (auto& [scene_id, scene] : scene_manager->GetSceneInstances())
+                if (ImGui::BeginPopupContextWindow())
                 {
-                    DrawScene(scene);
+                    if (ImGui::MenuItem("Create Entity")) 
+                    {
+                        Application::Get()->SubmitToMainThread([this]()
+                        {
+                            if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
+                            {
+                                this->m_Selection.SetSelection(scene->CreateEntity("Empty Entity"));
+                            }
+                        });
+                    }
+                    
+                    if (ImGui::BeginMenu("Meshes"))
+                    {
+                        if (ImGui::MenuItem("Create Cube")) 
+                        {
+                            Application::Get()->SubmitToMainThread([this]()
+                            {
+                                if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
+                                {
+                                    Entity entity = scene->CreateEntity("Cube");
+                                    entity.AddComponent<MeshRendererComponent>();
+                                    // TODO: Add Reference
+                                    this->m_Selection.SetSelection(entity);
+                                }
+                            });
+                        }
+                        
+                        if (ImGui::MenuItem("Create Sphere")) 
+                        {
+                            Application::Get()->SubmitToMainThread([this]()
+                            {
+                                if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
+                                {
+                                    Entity entity = scene->CreateEntity("Sphere");
+                                    entity.AddComponent<MeshRendererComponent>();
+                                    // TODO: Add Reference
+                                    this->m_Selection.SetSelection(entity);
+                                }
+                            });
+                        }
+                        
+                        if (ImGui::MenuItem("Create Plane")) 
+                        {
+                            Application::Get()->SubmitToMainThread([this]()
+                            {
+                                if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
+                                {
+                                    Entity entity = scene->CreateEntity("Plane");
+                                    entity.AddComponent<MeshRendererComponent>();
+                                    // TODO: Add Reference
+                                    this->m_Selection.SetSelection(entity);
+                                }
+                            });
+                        }
+                        
+                        if (ImGui::MenuItem("Create Capsule")) 
+                        {
+                            Application::Get()->SubmitToMainThread([this]()
+                            {
+                                if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
+                                {
+                                    Entity entity = scene->CreateEntity("Capsule");
+                                    entity.AddComponent<MeshRendererComponent>();
+                                    // TODO: Add Reference
+                                    this->m_Selection.SetSelection(entity);
+                                }
+                            });
+                        }
+                        
+                        if (ImGui::MenuItem("Create Suzanne")) 
+                        {
+                            Application::Get()->SubmitToMainThread([this]()
+                            {
+                                if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
+                                {
+                                    Entity entity = scene->CreateEntity("Suzanne");
+                                    entity.AddComponent<MeshRendererComponent>();
+                                    // TODO: Add Reference
+                                    this->m_Selection.SetSelection(entity);
+                                }
+                            });
+                        }
+
+                        ImGui::EndMenu();
+                    }
+                                        
+                    if (ImGui::BeginMenu("Lights"))
+                    {
+                        if (ImGui::MenuItem("Create Sphere Light")) 
+                        {
+                            Application::Get()->SubmitToMainThread([this]()
+                            {
+                                if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
+                                {
+                                    Entity entity = scene->CreateEntity("Sphere Light");
+                                    entity.AddComponent<SphereLightComponent>();
+                                    this->m_Selection.SetSelection(entity);
+                                }
+                            });
+                        }
+                        
+                        if (ImGui::MenuItem("Create Cone Light")) 
+                        {
+                            Application::Get()->SubmitToMainThread([this]()
+                            {
+                                if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
+                                {
+                                    Entity entity = scene->CreateEntity("Cone Light");
+                                    entity.AddComponent<ConeLightComponent>();
+                                    this->m_Selection.SetSelection(entity);
+                                }
+                            });
+                        }
+                        
+                        if (ImGui::MenuItem("Create Directional Light")) 
+                        {
+                            Application::Get()->SubmitToMainThread([this]()
+                            {
+                                if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
+                                {
+                                    Entity entity = scene->CreateEntity("Directional Light");
+                                    entity.AddComponent<DirectionalLightComponent>();
+                                    this->m_Selection.SetSelection(entity);
+                                }
+                            });
+                        }
+
+                        ImGui::EndMenu();
+                    }
+
+                    ImGui::EndPopup();
                 }
-                
-                DrawScene(scene_manager->GetPersistentScene());
+
+                {
+                    auto scene_manager = Application::GetProject()->GetSceneManager();
+                    
+                    for (auto& [scene_id, scene] : scene_manager->GetSceneInstances())
+                    {
+                        DrawScene(scene);
+                    }
+                    
+                    DrawScene(scene_manager->GetPersistentScene());
+                }
 
                 ImGui::EndChild();
-
+                
                 // This is to ensure that when we are dragging an entity, if
                 // dropped on itself it won't catch the Begin/End child as its
                 // target, rather will leave it in place
                 ImVec2 mouse_pos = ImGui::GetMousePos();
-                bool mouse_over_source = mouse_pos.x >= s_DraggingSourceMin.x &&
-                                        mouse_pos.y >= s_DraggingSourceMin.y &&
-                                        mouse_pos.x <= s_DraggingSourceMax.x &&
-                                        mouse_pos.y <= s_DraggingSourceMax.y;
+                bool mouse_over_source = mouse_pos.x >= m_DraggingSourceMin.x &&
+                                        mouse_pos.y >= m_DraggingSourceMin.y &&
+                                        mouse_pos.x <= m_DraggingSourceMax.x &&
+                                        mouse_pos.y <= m_DraggingSourceMax.y;
 
                 if (!mouse_over_source)
                 {
@@ -54,12 +181,12 @@ namespace BC
                             if (dropped_entity)
                             {
                                 // Store state for processing outside the render loop
-                                s_SourceDragDropEntity = dropped_entity;
-                                s_TargetDragDropEntity = {};
+                                m_SourceDragDropEntity = dropped_entity;
+                                m_TargetDragDropEntity = {};
                             }
                                 
-                            s_DraggingSourceMin = {};
-                            s_DraggingSourceMax = {};
+                            m_DraggingSourceMin = {};
+                            m_DraggingSourceMax = {};
                         }
 
                         ImGui::EndDragDropTarget();
@@ -146,8 +273,8 @@ namespace BC
                             children.insert(insert_pos, dropped_guid);
                         });
                     }
-                    s_DraggingSourceMin = {};
-                    s_DraggingSourceMax = {};
+                    m_DraggingSourceMin = {};
+                    m_DraggingSourceMax = {};
                 }
 
                 ImGui::EndDragDropTarget();
@@ -184,8 +311,8 @@ namespace BC
 
         if (ImGui::BeginDragDropSource())
         {
-            s_DraggingSourceMin = min;
-            s_DraggingSourceMax = max;
+            m_DraggingSourceMin = min;
+            m_DraggingSourceMax = max;
 
             ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &current_entity, sizeof(Entity));
             ImGui::EndDragDropSource();
@@ -200,11 +327,11 @@ namespace BC
                 if (dropped_entity && dropped_entity != current_entity)
                 {
                     // Store state for processing outside the render loop
-                    s_SourceDragDropEntity = dropped_entity;
-                    s_TargetDragDropEntity = current_entity;
+                    m_SourceDragDropEntity = dropped_entity;
+                    m_TargetDragDropEntity = current_entity;
                 }
-                s_DraggingSourceMin = {};
-                s_DraggingSourceMax = {};
+                m_DraggingSourceMin = {};
+                m_DraggingSourceMax = {};
             }
 
             ImGui::EndDragDropTarget();
@@ -222,6 +349,170 @@ namespace BC
                 ImGui::SetTooltip("Prefab connection invalid.");
             }
         }
+
+        if (ImGui::BeginPopupContextItem())
+		{ 
+            if (ImGui::MenuItem("Create Child Entity")) 
+			{
+                Application::Get()->SubmitToMainThread([this, current_entity, scene_ref = scene.get()]() 
+                {
+                    if (scene_ref)
+					{
+                        Entity entity = scene_ref->CreateEntity("New Entity", current_entity.GetGUID());
+                        this->m_Selection.SetSelection(entity);
+					}
+				});
+			}
+            
+            if (ImGui::BeginMenu("Meshes"))
+            {
+                if (ImGui::MenuItem("Create Cube")) 
+                {
+                    Application::Get()->SubmitToMainThread([this, current_entity, scene_ref = scene.get()]()
+                    {
+                        if (scene_ref)
+                        {
+                            Entity entity = scene_ref->CreateEntity("Cube", current_entity.GetGUID());
+                            entity.AddComponent<MeshRendererComponent>();
+                            // TODO: Add Cube Reference
+                            this->m_Selection.SetSelection(entity);
+                        }
+                    });
+                }
+                
+                if (ImGui::MenuItem("Create Sphere")) 
+                {
+                    Application::Get()->SubmitToMainThread([this, current_entity, scene_ref = scene.get()]()
+                    {
+                        if (scene_ref)
+                        {
+                            Entity entity = scene_ref->CreateEntity("Sphere", current_entity.GetGUID());
+                            entity.AddComponent<MeshRendererComponent>();
+                            // TODO: Add Sphere Reference
+                            this->m_Selection.SetSelection(entity);
+                        }
+                    });
+                }
+                
+                if (ImGui::MenuItem("Create Plane")) 
+                {
+                    Application::Get()->SubmitToMainThread([this, current_entity, scene_ref = scene.get()]()
+                    {
+                        if (scene_ref)
+                        {
+                            Entity entity = scene_ref->CreateEntity("Plane", current_entity.GetGUID());
+                            entity.AddComponent<MeshRendererComponent>();
+                            // TODO: Add Plane Reference
+                            this->m_Selection.SetSelection(entity);
+                        }
+                    });
+                }
+                
+                if (ImGui::MenuItem("Create Capsule")) 
+                {
+                    Application::Get()->SubmitToMainThread([this, current_entity, scene_ref = scene.get()]()
+                    {
+                        if (scene_ref)
+                        {
+                            Entity entity = scene_ref->CreateEntity("Capsule", current_entity.GetGUID());
+                            entity.AddComponent<MeshRendererComponent>();
+                            // TODO: Add Capsule Reference
+                            this->m_Selection.SetSelection(entity);
+                        }
+                    });
+                }
+                
+                if (ImGui::MenuItem("Create Suzanne")) 
+                {
+                    Application::Get()->SubmitToMainThread([this, current_entity, scene_ref = scene.get()]()
+                    {
+                        if (scene_ref)
+                        {
+                            Entity entity = scene_ref->CreateEntity("Suzanne", current_entity.GetGUID());
+                            entity.AddComponent<MeshRendererComponent>();
+                            // TODO: Add Suzanne Reference
+                            this->m_Selection.SetSelection(entity);
+                        }
+                    });
+                }
+                
+                ImGui::EndMenu();
+            }            
+            
+            if (ImGui::BeginMenu("Lights"))
+            {
+                if (ImGui::MenuItem("Create Sphere Light")) 
+                {
+                    Application::Get()->SubmitToMainThread([this, current_entity, scene_ref = scene.get()]()
+                    {
+                        if (scene_ref)
+                        {
+                            Entity entity = scene_ref->CreateEntity("Sphere Light", current_entity.GetGUID());
+                            entity.AddComponent<SphereLightComponent>();
+                            this->m_Selection.SetSelection(entity);
+                        }
+                    });
+                }
+                
+                if (ImGui::MenuItem("Create Cone Light")) 
+                {
+                    Application::Get()->SubmitToMainThread([this, current_entity, scene_ref = scene.get()]()
+                    {
+                        if (scene_ref)
+                        {
+                            Entity entity = scene_ref->CreateEntity("Cone Light", current_entity.GetGUID());
+                            entity.AddComponent<ConeLightComponent>();
+                            this->m_Selection.SetSelection(entity);
+                        }
+                    });
+                }
+                
+                if (ImGui::MenuItem("Create Directional Light")) 
+                {
+                    Application::Get()->SubmitToMainThread([this, current_entity, scene_ref = scene.get()]()
+                    {
+                        if (scene_ref)
+                        {
+                            Entity entity = scene_ref->CreateEntity("Directional Light", current_entity.GetGUID());
+                            entity.AddComponent<DirectionalLightComponent>();
+                            this->m_Selection.SetSelection(entity);
+                        }
+                    });
+                }
+
+                ImGui::EndMenu();
+            }
+
+            ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+            ImGui::Dummy({0.0f, 2.5f});
+            ImGui::Separator();
+            ImGui::Dummy({0.0f, 2.5f});
+            ImGui::PopStyleColor();
+
+			if (ImGui::MenuItem("Duplicate Entity"))
+			{
+				Application::Get()->SubmitToMainThread([current_entity, scene_ref = scene.get()]() 
+                {
+					if (scene_ref)
+					{
+						scene_ref->DuplicateEntity(current_entity);
+					}
+				});
+			}
+
+			if (ImGui::MenuItem("Delete Entity"))
+            {
+				Application::Get()->SubmitToMainThread([current_entity, scene_ref = scene.get()]() 
+                {
+					if (scene_ref)
+					{
+						scene_ref->DestroyEntity(current_entity);
+					}
+				});
+            }
+
+			ImGui::EndPopup();
+		}
 
         // Capture if Clicking the Label Component of TreeNode to Select This Entity
         {
@@ -350,18 +641,18 @@ namespace BC
 
         Application::Get()->SubmitToMainThread([&]()
         {
-            if (s_SourceDragDropEntity && s_SourceDragDropEntity != s_TargetDragDropEntity)
+            if (m_SourceDragDropEntity && m_SourceDragDropEntity != m_TargetDragDropEntity)
             {
-                if (s_TargetDragDropEntity)
+                if (m_TargetDragDropEntity)
                 {
-                    s_SourceDragDropEntity.GetComponent<MetaComponent>().AttachParent(s_TargetDragDropEntity.GetGUID());
+                    m_SourceDragDropEntity.GetComponent<MetaComponent>().AttachParent(m_TargetDragDropEntity.GetGUID());
                 }
                 else
                 {
-                    s_SourceDragDropEntity.GetComponent<MetaComponent>().DetachParent();
+                    m_SourceDragDropEntity.GetComponent<MetaComponent>().DetachParent();
                 }
-                s_SourceDragDropEntity = {};
-                s_TargetDragDropEntity = {};
+                m_SourceDragDropEntity = {};
+                m_TargetDragDropEntity = {};
             }
         });
     }

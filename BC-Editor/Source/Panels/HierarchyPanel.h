@@ -8,10 +8,12 @@ namespace BC
 
     class HierarchyPanel : public IEditorPanel
     {
-        static ImVec2 s_DraggingSourceMin;
-        static ImVec2 s_DraggingSourceMax;
-        static Entity s_SourceDragDropEntity;
-        static Entity s_TargetDragDropEntity;
+        ImVec2 m_DraggingSourceMin      = {};
+        ImVec2 m_DraggingSourceMax      = {};
+        Entity m_SourceDragDropEntity   = {};
+        Entity m_TargetDragDropEntity   = {};
+
+        GUID m_ActiveSceneID = NULL_GUID;
 
     public:
 

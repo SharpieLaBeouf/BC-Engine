@@ -385,8 +385,82 @@ namespace BC
 
         m_SceneFilePaths[scene_id] = scene_file_path;
     }
-    
-    void SceneManager::Serialise(YAML::Emitter& out)
+
+    void SceneManager::SetActiveScene(GUID scene_id)
+    {
+        if (!m_SceneInstances.contains(scene_id))
+            return;
+        
+        m_ActiveScene = scene_id;
+    }
+
+    void SceneManager::SetActiveScene(const std::string& scene_name)
+    {
+        for (const auto& [scene_id, scene] : m_SceneInstances)
+        {
+            if (scene_name == scene->GetName())
+            {
+                m_ActiveScene = scene_id;
+                return;
+            }
+        }
+    }
+
+    std::shared_ptr<Scene> SceneManager::GetActiveScene()
+    {
+        // Populate scene file paths from loaded instances if needed
+        if (m_SceneFilePaths.empty())
+        {
+            if (!m_SceneInstances.empty())
+            {
+                bool entry_valid = false;
+
+                for (const auto& [scene_id, scene] : m_SceneInstances)
+                {
+                    m_SceneFilePaths[scene_id] = scene->m_SceneFilePath;
+                    if (scene_id == m_EntryScene)
+                        entry_valid = true;
+                }
+
+                if (!entry_valid)
+                    m_EntryScene = m_SceneInstances.begin()->first;
+            }
+            else
+            {
+                auto default_scene = Scene::CreateDefaultScene("Untitled Scene.scene");
+
+                m_EntryScene = default_scene->m_SceneID;
+                m_ActiveScene = m_EntryScene;
+                m_SceneFilePaths[m_EntryScene] = default_scene->m_SceneFilePath;
+                m_SceneInstances[m_EntryScene] = std::move(default_scene);
+            }
+        }
+
+        // Ensure Entry Scene is valid
+        if (m_EntryScene == NULL_GUID && !m_SceneFilePaths.empty())
+            m_EntryScene = m_SceneFilePaths.begin()->first;
+
+        // Ensure Active Scene is valid
+        if (m_ActiveScene == NULL_GUID)
+            m_ActiveScene = m_EntryScene;
+
+        // Load the active scene if it's not loaded yet
+        if (!m_SceneInstances.contains(m_ActiveScene) && m_SceneFilePaths.contains(m_ActiveScene))
+        {
+            auto loaded_scene = Scene::LoadScene(m_SceneFilePaths[m_ActiveScene]);
+            if (loaded_scene)
+            {
+                loaded_scene->m_SceneID = m_ActiveScene;
+                m_SceneInstances[m_ActiveScene] = std::move(loaded_scene);
+            }
+        }
+
+        auto it = m_SceneInstances.find(m_ActiveScene);
+        BC_ASSERT(it != m_SceneInstances.end(), "SceneManager::GetActiveScene: Could not retrieve active scene.");
+        return (it != m_SceneInstances.end()) ? it->second : nullptr;
+    }
+
+    void SceneManager::Serialise(YAML::Emitter &out)
     {
         out << YAML::Key << "Scene Manager";
         out << YAML::BeginMap;
@@ -414,6 +488,8 @@ namespace BC
     {
         if (data["Entry Scene"])
             m_EntryScene = data["Entry Scene"].as<uint64_t>();
+
+        m_ActiveScene = m_EntryScene;
         
         if (!data["Scenes"])
             return;

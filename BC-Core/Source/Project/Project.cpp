@@ -41,6 +41,7 @@ namespace BC
 
         project->m_SceneManager->AddSceneTemplate(default_scene);
         project->m_SceneManager->m_EntryScene = default_scene->m_SceneID;
+        project->m_SceneManager->m_ActiveScene = default_scene->m_SceneID;
 
         return std::move(project);
     }

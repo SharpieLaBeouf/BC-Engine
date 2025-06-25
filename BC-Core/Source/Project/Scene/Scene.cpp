@@ -66,12 +66,12 @@ namespace BC
         return *this;
     }
 
-    Entity Scene::CreateEntity(const std::string &name)
+    Entity Scene::CreateEntity(const std::string &name, GUID parent_guid)
     {
-        return CreateEntity(GUID(), name);
+        return CreateEntity(GUID(), name, parent_guid);
     }
 
-    Entity Scene::CreateEntity(GUID entity_guid, const std::string &name)
+    Entity Scene::CreateEntity(GUID entity_guid, const std::string &name, GUID parent_guid)
     {
         // Obtain lock
 		std::unique_lock<std::mutex> scene_octree_lock(m_Octree->GetOctreeMutex());
@@ -83,15 +83,20 @@ namespace BC
 
 		Entity entity = { m_Registry.create(), this };
 
-        // 1. Meta Component
-        auto& meta_component = entity.AddComponent<MetaComponent>();
-        meta_component.SetEntityGUID(entity_guid);
-        meta_component.SetUniqueName(name);
-
-        // 2. Transform Component
+        // 1. Transform Component
 		entity.AddComponent<TransformComponent>();
 
+        // 2. Meta Component
+        auto& meta_component = entity.AddComponent<MetaComponent>();
+        meta_component.SetEntityGUID(entity_guid);
+
+        if (parent_guid != NULL_GUID)
+            meta_component.AttachParent(parent_guid);
+        meta_component.SetUniqueName(name);
+
 		m_EntityMap.emplace(entity_guid, entity);
+
+        MarkHierarchyDirty();
 
         return entity;
     }
@@ -165,14 +170,22 @@ namespace BC
 		registry->destroy(entity);
 
     }
-    
-    void Scene::DestroyEntity(const Entity& entity)
+
+    void Scene::DuplicateEntity(const Entity &entity)
+    {
+
+
+        MarkHierarchyDirty();
+    }
+
+    void Scene::DestroyEntity(const Entity &entity)
     {
         // Obtain lock
 		std::unique_lock<std::mutex> scene_octree_lock(m_Octree->GetOctreeMutex());
 
         DestroyEntityHelper(entity, m_EntityMap);
 
+        MarkHierarchyDirty();
     }
     
 #pragma endregion
@@ -375,6 +388,8 @@ namespace BC
 			// Create the octree and insert data sources
 			m_Octree = std::make_shared<OctreeBounds<Entity>>(octree_config, data_sources);
 		}
+        
+        MarkHierarchyDirty();
     }
 
 #pragma endregion
