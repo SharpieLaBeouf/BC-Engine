@@ -1,7 +1,7 @@
 Scene ID: 2304020161939299466
 Scene Name: Untitled Scene
 Entities:
-  - Entity ID: 10026222659238494970
+  - Entity ID: 9468187865995121791
     Entity Name: Cube
     TransformComponent:
       Position: [0, 0, 0]
@@ -10,7 +10,7 @@ Entities:
       Scale: [1, 1, 1]
     MetaComponent:
       Name: Cube
-      GUID: 10026222659238494970
+      GUID: 9468187865995121791
       ParentGUID: 18446744073709551615
       PrefabAssetHandle: 18446744073709551615
       Children:
@@ -19,7 +19,7 @@ Entities:
         {}
     MeshRendererComponent:
       {}
-  - Entity ID: 3465762005633939464
+  - Entity ID: 9833359140942419166
     Entity Name: Directional Light
     TransformComponent:
       Position: [0, 0, 0]
@@ -28,7 +28,7 @@ Entities:
       Scale: [1, 1, 1]
     MetaComponent:
       Name: Directional Light
-      GUID: 3465762005633939464
+      GUID: 9833359140942419166
       ParentGUID: 18446744073709551615
       PrefabAssetHandle: 18446744073709551615
       Children:
@@ -37,7 +37,7 @@ Entities:
         {}
     DirectionalLightComponent:
       {}
-  - Entity ID: 8637218463007381022
+  - Entity ID: 16716355466525531370
     Entity Name: Main Camera
     TransformComponent:
       Position: [0, 5, 10]
@@ -46,7 +46,7 @@ Entities:
       Scale: [1, 1, 1]
     MetaComponent:
       Name: Main Camera
-      GUID: 8637218463007381022
+      GUID: 16716355466525531370
       ParentGUID: 18446744073709551615
       PrefabAssetHandle: 18446744073709551615
       Children:
