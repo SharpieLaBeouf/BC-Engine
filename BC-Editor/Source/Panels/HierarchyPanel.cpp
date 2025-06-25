@@ -176,6 +176,7 @@ namespace BC
                     {
                         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
                         {
+                            // TODO: Check if Entity's Scenes Are the Same -> IF NOT WE NEED TO MOVE ONE ENTITY FROM ONE SCENE TO THE OTHER, THEN PARENT FROM
                             Entity dropped_entity = *(Entity*)payload->Data;
 
                             if (dropped_entity)
@@ -200,6 +201,9 @@ namespace BC
     static int s_ChildDepth = -1;
     void HierarchyPanel::DrawEntityRecursive(const std::shared_ptr<Scene>& scene, const Entity& current_entity, const std::unordered_map<GUID, Entity>& all_entities)
     {
+        if (!current_entity)
+            return;
+            
         s_ChildDepth++;
         std::string entity_label = current_entity.GetName();
 
@@ -245,6 +249,7 @@ namespace BC
                 {
                     Entity dropped_entity = *(Entity*)payload->Data;
 
+                    // TODO: Check if Entity's Scenes Are the Same -> IF NOT WE NEED TO MOVE ONE ENTITY FROM ONE SCENE TO THE OTHER, THEN PARENT FROM
                     if (dropped_entity && dropped_entity != current_entity)
                     {
                         Application::Get()->SubmitToMainThread([dropped_entity, current_entity]()
@@ -358,7 +363,7 @@ namespace BC
                 {
                     if (scene_ref)
 					{
-                        Entity entity = scene_ref->CreateEntity("New Entity", current_entity.GetGUID());
+                        Entity entity = scene_ref->CreateEntity("Empty Entity", current_entity.GetGUID());
                         this->m_Selection.SetSelection(entity);
 					}
 				});
@@ -600,6 +605,31 @@ namespace BC
         // Render tree node with label hidden from ID
         bool open = ImGui::TreeNodeEx("##SceneNode", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth, "%s", scene_name.c_str());
 
+        if (ImGui::BeginPopupContextItem())
+        {
+            auto scene_manager = Application::GetProject()->GetSceneManager();
+
+            bool active_scene = scene_manager->GetActiveScene()->GetSceneID() == scene->GetSceneID();
+            if (active_scene) ImGui::BeginDisabled();
+            if (ImGui::MenuItem("Set Active Scene"))
+                scene_manager->SetActiveScene(scene->GetSceneID());
+            if (active_scene) ImGui::EndDisabled();
+            
+            bool only_scene = scene_manager->GetSceneInstances().size() == 1;
+            if (only_scene) ImGui::BeginDisabled();
+            if (ImGui::MenuItem("Remove Scene"))
+            {
+                if (active_scene)
+                {
+                    scene_manager->SetActiveScene(scene_manager->GetSceneInstances().begin()->first);
+                }
+                scene_manager->UnloadScene(scene->GetSceneID());
+            }
+            if (only_scene) ImGui::EndDisabled();
+
+            ImGui::EndPopup();
+        }
+
         ImGui::PopID();
         ImGui::PopStyleColor(3);
         ImGui::PopStyleVar();
@@ -634,6 +664,7 @@ namespace BC
 
         for (const auto& entity : root_entities[scene->GetSceneID()])
         {
+            s_ChildDepth = -1; // Ensure Reset Each Root Entity
             DrawEntityRecursive(scene, entity, all_entities[scene->GetSceneID()]);
         }
 
@@ -641,6 +672,7 @@ namespace BC
 
         Application::Get()->SubmitToMainThread([&]()
         {
+            // TODO: Check if Entity's Scenes Are the Same -> IF NOT WE NEED TO MOVE ONE ENTITY FROM ONE SCENE TO THE OTHER, THEN PARENT FROM
             if (m_SourceDragDropEntity && m_SourceDragDropEntity != m_TargetDragDropEntity)
             {
                 if (m_TargetDragDropEntity)

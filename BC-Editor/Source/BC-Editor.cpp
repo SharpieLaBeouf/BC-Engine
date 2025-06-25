@@ -39,7 +39,6 @@ namespace BC
 		m_Panels[PanelType_Statistics] 			= std::make_unique<StatisticsPanel>(); 			m_Panels[PanelType_Statistics]->SetActive(true);
 		m_Panels[PanelType_HumanoidConfig] 		= std::make_unique<HumanoidConfigPanel>(); 		m_Panels[PanelType_HumanoidConfig]->SetActive(true);
 		m_Panels[PanelType_AnimatorNodeGraph] 	= std::make_unique<AnimatorPanel>(); 			m_Panels[PanelType_AnimatorNodeGraph]->SetActive(true);
-		m_Panels[PanelType_ProjectConfig] 		= std::make_unique<ProjectConfigPanel>(); 		m_Panels[PanelType_ProjectConfig]->SetActive(true);
 		m_Panels[PanelType_SceneManagerConfig] 	= std::make_unique<SceneManagerConfigPanel>(); 	m_Panels[PanelType_SceneManagerConfig]->SetActive(true);
 		m_Panels[PanelType_SceneConfig] 		= std::make_unique<SceneConfigPanel>(); 		m_Panels[PanelType_SceneConfig]->SetActive(true);
 
@@ -61,7 +60,6 @@ namespace BC
 					break;
 				}
 				case PanelType_AssetRegistry:
-				case PanelType_ProjectConfig:
 				case PanelType_SceneManagerConfig:
 				case PanelType_SceneConfig:
 				case PanelType_HumanoidConfig:
@@ -118,6 +116,35 @@ namespace BC
 		DrawDockspace();
 	}
 
+    void EditorLayer::OpenScene(bool additive, const std::filesystem::path& scene_file_path)
+    {
+		auto project = Application::GetProject();
+		
+		std::filesystem::path in_filepath;
+		if (scene_file_path.empty())
+			in_filepath = Util::OpenFile("Scene (*.scene)\0*.scene\0", project->GetDirectory() / "Scenes");
+		else
+			in_filepath = scene_file_path.string();
+
+		if (in_filepath.empty())
+			return;
+
+		// If scene is not relative to scene directory, and if original is not 
+		if (!Util::IsPathRelativeTo(in_filepath, project->GetDirectory() / "Scenes"))
+			return;
+		
+		m_SceneState = SceneState_Edit;
+
+		if (!additive)
+			OnStopScene();
+
+		project->GetSceneManager()->LoadSceneAsyncNoAdd(std::filesystem::relative(in_filepath, project->GetDirectory() / "Scenes"), additive);
+    }
+
+    void EditorLayer::OnStopScene()
+    {
+    }
+
     void EditorLayer::DrawTopBar()
     {
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -173,7 +200,12 @@ namespace BC
 
 						if (ImGui::MenuItem("Open Scene", "Ctrl+O")) 
 						{
-							// TODO: Implement
+							OpenScene(false);
+						}
+
+						if (ImGui::MenuItem("Open Scene Additively")) 
+						{
+							OpenScene(true);
 						}
 
 						ImGui::EndMenu();
@@ -183,15 +215,22 @@ namespace BC
 
 						if (ImGui::MenuItem("Save Project")) 
 						{
-							// TODO: Implement
+							if (auto project = Application::GetProject();project)
+							{
+								project->SaveProject();
+							}
 						}
 
-						if (ImGui::MenuItem("Save Scene", "Ctrl+S")) 
+						if (ImGui::MenuItem("Save Active Scene", "Ctrl+S")) 
 						{
-							// TODO: Implement
+							if (auto project = Application::GetProject();project)
+							{
+								if (auto scene = project->GetSceneManager()->GetActiveScene(); scene)
+									scene->SaveScene();
+							}
 						}
 
-						if (ImGui::MenuItem("Save Scene As", "Ctrl+Shift+S"))
+						if (ImGui::MenuItem("Save Active Scene As", "Ctrl+Shift+S"))
 						{
 							// TODO: Implement
 						}
@@ -225,10 +264,6 @@ namespace BC
 
 				if (ImGui::BeginMenu("Edit")) 
 				{
-
-					if (ImGui::MenuItem("Project Config")) 
-						GetPanel<ProjectConfigPanel>()->SetActive(true);
-
 					if (ImGui::MenuItem("Scene Manager Config"))
 						GetPanel<SceneManagerConfigPanel>()->SetActive(true);
 					

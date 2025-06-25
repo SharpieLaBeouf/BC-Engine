@@ -10,7 +10,7 @@
 #include "Panels/HumanoidConfigPanel.h"
 #include "Panels/InspectorPanel.h"
 #include "Panels/ProfilerPanel.h"
-#include "Panels/ProjectSceneConfigPanels.h"
+#include "Panels/SceneConfigPanels.h"
 #include "Panels/SceneViewportPanel.h"
 #include "Panels/StatisticsPanel.h"
 
@@ -59,6 +59,10 @@ namespace BC
         EditorCamera* GetEditorCamera() { return &m_Camera; }
 
     private:
+
+        void OpenScene(bool additive, const std::filesystem::path& scene_file_path = "");
+
+        void OnStopScene();
 
         void DrawTopBar();
         void DrawDockspace();
@@ -120,11 +124,6 @@ namespace BC
             {
                 if (!m_Panels.contains(PanelType_Profiler)) return nullptr;
                 return reinterpret_cast<ProfilerPanel*>(m_Panels[PanelType_Profiler].get());
-            }
-            else if constexpr   (std::is_same_v<TPanelType, ProjectConfigPanel>)
-            {
-                if (!m_Panels.contains(PanelType_ProjectConfig)) return nullptr;
-                return reinterpret_cast<ProjectConfigPanel*>(m_Panels[PanelType_ProjectConfig].get());
             }
             else if constexpr   (std::is_same_v<TPanelType, SceneManagerConfigPanel>)
             {

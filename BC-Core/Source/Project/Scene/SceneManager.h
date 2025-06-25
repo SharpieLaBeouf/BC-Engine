@@ -132,11 +132,32 @@ namespace BC
         void LoadScene(GUID scene_guid, bool additive = false, const std::filesystem::path& project_directory = "");
         void LoadSceneAsync(GUID scene_guid, bool additive = false, const std::filesystem::path& project_directory = "");
 
+        /// @brief This will load a scene into the SceneManager which is not included in m_SceneFilepaths
+        ///
+        /// For example, for the editor, you may load scenes for editing, but
+        /// not add them to the m_SceneFilePaths (e.g., what is included in
+        /// final build)
+        void LoadSceneNoAdd(const std::filesystem::path& scene_file_path, bool additive = false);
+        
+        /// @brief This will load a scene into the SceneManager which is not included in m_SceneFilepaths
+        ///
+        /// For example, for the editor, you may load scenes for editing, but
+        /// not add them to the m_SceneFilePaths (e.g., what is included in
+        /// final build)
+        void LoadSceneAsyncNoAdd(const std::filesystem::path& scene_file_path, bool additive = false);
+
         void AddSceneTemplate(std::shared_ptr<Scene> scene);
         void AddSceneTemplate(GUID scene_id, const std::filesystem::path& scene_file_path);
 
         void SetActiveScene(GUID scene_id);
         void SetActiveScene(const std::string& scene_name);
+
+        void SetEntryScene(GUID scene_id);
+        void SetEntryScene(const std::string& scene_name);
+        GUID GetEntryScene() const { return m_EntryScene; }
+
+        void UnloadScene(GUID scene_guid);
+        void UnloadScene(const std::string& scene_name);
 
         std::shared_ptr<Scene> GetActiveScene();
 

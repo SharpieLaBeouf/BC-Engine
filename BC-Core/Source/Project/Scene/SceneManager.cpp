@@ -278,6 +278,7 @@ namespace BC
 
         for(auto [scene_id, scene] : m_SceneInstances)
         {
+            if (!scene) continue;
             scene->OnUpdate();
         }
     }
@@ -288,6 +289,7 @@ namespace BC
 
         for(auto [scene_id, scene] : m_SceneInstances)
         {
+            if (!scene) continue;
             scene->OnFixedUpdate();
         }
 
@@ -301,6 +303,7 @@ namespace BC
 
         for(auto [scene_id, scene] : m_SceneInstances)
         {
+            if (!scene) continue;
             scene->OnLateUpdate();
         }
     }
@@ -310,7 +313,10 @@ namespace BC
         for (const auto& [scene_id, scene_path] : m_SceneFilePaths)
         {
             if (scene_name == scene_path.stem().string())
+            {
                 LoadScene(scene_id, additive);
+                return;
+            }
         }
         BC_CORE_WARN("SceneManager::LoadScene: Could Not Find Scene Name: '{}'", scene_name);
     }
@@ -320,7 +326,10 @@ namespace BC
         for (const auto& [scene_id, scene_path] : m_SceneFilePaths)
         {
             if (scene_name == scene_path.stem().string())
+            {
                 LoadSceneAsync(scene_id, additive);
+                return;
+            }
         }
         BC_CORE_WARN("SceneManager::LoadSceneAsync: Could Not Find Scene Name: '{}'", scene_name);
     }
@@ -337,13 +346,20 @@ namespace BC
             "SceneManager::LoadScene: Scene Manager ID Mismatch With Runtime Hash of Scene File Path."
         );
 
-        m_SceneInstances[scene_guid] = Scene::LoadScene(m_SceneFilePaths[scene_guid], project_directory);
-        m_SceneInstances[scene_guid]->m_SceneID = scene_guid;
+        Application::Get()->SubmitToMainThread([&, additive, scene_guid, project_directory]()
+        {
+            if (!additive)
+                m_SceneInstances.clear();
+
+            m_SceneInstances[scene_guid] = Scene::LoadScene(m_SceneFilePaths[scene_guid], project_directory);
+            m_SceneInstances[scene_guid]->m_SceneID = scene_guid;
+        });
     }
     
     void SceneManager::LoadSceneAsync(GUID scene_guid, bool additive, const std::filesystem::path& project_directory)
     {
-        if (!m_SceneFilePaths.contains(scene_guid))
+        // Don't load if doesn't exist in templates OR if already loaded
+        if (!m_SceneFilePaths.contains(scene_guid) || m_SceneInstances.contains(scene_guid))
             return;
         
         BC_ASSERT
@@ -352,18 +368,66 @@ namespace BC
             "SceneManager::LoadSceneAsync: SceneManager Cached ID Mismatch With Runtime Hash of Scene File Path."
         );
         
-        Application::GetJobSystem()->SubmitJob
-        (
-            "SceneManager::LoadSceneAsync",
-            [&]()
-            {
-                m_SceneInstances[scene_guid] = Scene::LoadScene(m_SceneFilePaths[scene_guid], project_directory);
-                m_SceneInstances[scene_guid]->m_SceneID = scene_guid;
-            },
-            nullptr,
-            JobPriority::Medium,
-            false
-        );
+        Application::Get()->SubmitToMainThread([&, additive, scene_guid, project_directory]()
+        {
+            if (!additive)
+                m_SceneInstances.clear();
+            
+            Application::GetJobSystem()->SubmitJob
+            (
+                "SceneManager::LoadSceneAsync",
+                [&, scene_guid, project_directory]()
+                {
+                    m_SceneInstances[scene_guid] = Scene::LoadScene(m_SceneFilePaths[scene_guid], project_directory);
+                    m_SceneInstances[scene_guid]->m_SceneID = scene_guid;
+                },
+                nullptr,
+                JobPriority::Medium,
+                false
+            );
+        });
+    }
+
+    void SceneManager::LoadSceneNoAdd(const std::filesystem::path &scene_file_path, bool additive)
+    {
+        GUID scene_guid = Util::HashStringInsensitive(Util::NormaliseFilePathToString(scene_file_path));
+        if (m_SceneInstances.contains(scene_guid)) // Do Not Reload
+            return;
+        
+        Application::Get()->SubmitToMainThread([&, additive, scene_guid, scene_file_path]()
+        {
+            if (!additive)
+                m_SceneInstances.clear();
+
+            m_SceneInstances[scene_guid] = Scene::LoadScene(scene_file_path, Application::GetProject()->GetDirectory());
+            m_SceneInstances[scene_guid]->m_SceneID = scene_guid;
+        });
+    }
+
+    void SceneManager::LoadSceneAsyncNoAdd(const std::filesystem::path &scene_file_path, bool additive)
+    {
+        GUID scene_guid = Util::HashStringInsensitive(Util::NormaliseFilePathToString(scene_file_path));
+        if (m_SceneInstances.contains(scene_guid)) // Do Not Reload
+            return;
+
+        Application::Get()->SubmitToMainThread([&, additive, scene_guid, scene_file_path]()
+        {
+            if (!additive)
+                m_SceneInstances.clear();
+
+            Application::GetJobSystem()->SubmitJob
+            (
+                "SceneManager::LoadSceneAsync",
+                [&, scene_guid, scene_file_path]()
+                {
+                    m_SceneInstances[scene_guid] = Scene::LoadScene(scene_file_path, Application::GetProject()->GetDirectory());
+                    m_SceneInstances[scene_guid]->m_SceneID = scene_guid;
+                },
+                nullptr,
+                JobPriority::Medium,
+                false
+            );
+        });
     }
 
     void SceneManager::AddSceneTemplate(std::shared_ptr<Scene> scene)
@@ -401,6 +465,52 @@ namespace BC
             if (scene_name == scene->GetName())
             {
                 m_ActiveScene = scene_id;
+                return;
+            }
+        }
+    }
+
+    void SceneManager::SetEntryScene(GUID scene_id)
+    {
+        if (!m_SceneFilePaths.contains(scene_id))
+            return;
+        
+        m_EntryScene = scene_id;
+    }
+
+    void SceneManager::SetEntryScene(const std::string& scene_name)
+    {
+        for (const auto& [scene_id, scene] : m_SceneInstances)
+        {
+            if (scene_name == scene->GetName())
+            {
+                m_EntryScene = scene_id;
+                return;
+            }
+        }
+    }
+
+    void SceneManager::UnloadScene(GUID scene_guid)
+    {
+        if (!m_SceneInstances.contains(scene_guid))
+            return;
+
+        Application::Get()->SubmitToMainThread([&, scene_guid]()
+        {
+            m_SceneInstances.erase(scene_guid);
+        });
+    }
+
+    void SceneManager::UnloadScene(const std::string &scene_name)
+    {
+        for (const auto& [scene_id, scene] : m_SceneInstances)
+        {
+            if (scene_name == scene->GetName())
+            {
+                Application::Get()->SubmitToMainThread([&, scene_id]()
+                {
+                    m_SceneInstances.erase(scene_id);
+                });
                 return;
             }
         }
@@ -507,7 +617,7 @@ namespace BC
     {
         for (auto& [scene_id, scene] : m_SceneInstances)
         {            
-            scene->Serialise();
+            scene->SaveScene();
         }
     }
 }

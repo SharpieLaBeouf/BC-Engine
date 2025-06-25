@@ -21,7 +21,6 @@ namespace BC
                 case PanelType_Statistics:           return "Statistics";
                 case PanelType_HumanoidConfig:       return "Humanoid Config";
                 case PanelType_AnimatorNodeGraph:    return "Animator";
-                case PanelType_ProjectConfig:        return "Project Config";
                 case PanelType_SceneManagerConfig:   return "Scene Manager Config";
                 case PanelType_SceneConfig:          return "Scene Config";
             }
@@ -42,7 +41,6 @@ namespace BC
                 { "Statistics",             PanelType_Statistics },
                 { "Humanoid Config",        PanelType_HumanoidConfig },
                 { "Animator",               PanelType_AnimatorNodeGraph },
-                { "Project Config",         PanelType_ProjectConfig },
                 { "Scene Manager Config",    PanelType_SceneManagerConfig },
                 { "Scene Config",           PanelType_SceneConfig }
             };

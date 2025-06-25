@@ -29,7 +29,6 @@ namespace BC
         PanelType_HumanoidConfig,
         PanelType_AnimatorNodeGraph,
 
-        PanelType_ProjectConfig,
         PanelType_SceneManagerConfig,
         PanelType_SceneConfig
     };

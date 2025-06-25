@@ -49,8 +49,6 @@ namespace BC
 		std::filesystem::path WorkingDirectory;
         ApplicationCommandLineArgs CommandLineArgs;
 
-		std::unique_ptr<Project> EntryProject = nullptr;
-
 		glm::uvec2 WindowRes = { 1600, 900 };
 		WindowedMode WindowMode = WindowedMode::Windowed;
 		bool VSync = false;
@@ -119,7 +117,7 @@ namespace BC
 		std::unique_ptr<LayerStack> m_LayerStack = std::make_unique<LayerStack>();
 
 		/// @brief The overarching project for this Application instance
-		std::unique_ptr<Project> m_Project;
+		std::unique_ptr<Project> m_Project = std::make_unique<Project>();
 
 		// ----------------------------------
 		// 			Multi-Threading

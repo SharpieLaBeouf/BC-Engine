@@ -1,0 +1,57 @@
+Scene ID: 9631156400114435454
+Scene Name: Untitled Scene - Copy
+Entities:
+  - Entity ID: 1
+    Entity Name: Cube
+    TransformComponent:
+      Position: [0, 0, 0]
+      Orientation: [0.85355335, 0.3535534, -0.3535534, -0.14644663]
+      OrientationEulerHint: [54.735615, -30.000002, -35.264397]
+      Scale: [1, 1, 1]
+    MetaComponent:
+      Name: Cube
+      GUID: 1
+      ParentGUID: 2
+      PrefabAssetHandle: 18446744073709551615
+      Children:
+        []
+      Scripts:
+        {}
+    MeshRendererComponent:
+      {}
+  - Entity ID: 2
+    Entity Name: Directional Light
+    TransformComponent:
+      Position: [0, 0, 0]
+      Orientation: [0.85355335, -0.3535534, 0.3535534, 0.14644663]
+      OrientationEulerHint: [-45, 45, 0]
+      Scale: [1, 1, 1]
+    MetaComponent:
+      Name: Directional Light
+      GUID: 2
+      ParentGUID: 18446744073709551615
+      PrefabAssetHandle: 18446744073709551615
+      Children:
+        - ChildGUID: 1
+      Scripts:
+        {}
+    DirectionalLightComponent:
+      {}
+  - Entity ID: 3
+    Entity Name: Main Camera
+    TransformComponent:
+      Position: [0, 5, 10]
+      Orientation: [0, 0, 0.70710677, -1.0536712e-08]
+      OrientationEulerHint: [-3.1415927, 0, 3.1415927]
+      Scale: [1, 1, 1]
+    MetaComponent:
+      Name: Main Camera
+      GUID: 3
+      ParentGUID: 18446744073709551615
+      PrefabAssetHandle: 18446744073709551615
+      Children:
+        []
+      Scripts:
+        {}
+    CameraComponent:
+      {}

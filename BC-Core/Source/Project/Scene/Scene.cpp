@@ -268,6 +268,11 @@ namespace BC
         }
     }
 
+    void Scene::SaveScene()
+    {
+        Serialise();
+    }
+
     void Scene::Serialise()
     {
         std::filesystem::path out_path = Application::GetProject()->GetDirectory() / "Scenes" / m_SceneFilePath;
@@ -285,9 +290,9 @@ namespace BC
             out << YAML::BeginSeq;
             {
                 auto view = m_Registry.view<entt::entity>();
-                for (auto entity_handle : view) 
+                for (auto it = view.rbegin(); it != view.rend(); ++it)
                 {
-                    Entity entity = { entity_handle, this };
+                    Entity entity = { *it, this };
                     if (!entity)
                         continue;
 

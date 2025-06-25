@@ -1,5 +1,11 @@
 #pragma once
 
+#include "Util/Platform.h"
+
+#if defined(BC_PLATFORM_WINDOWS)
+#include <windows.h>
+#endif
+
 // Core
 #include "Core/Application.h"
 #include "Core/GUID.h"
@@ -16,7 +22,6 @@
 // Utils
 #include "Util/Hash.h"
 #include "Util/Macro.h"
-#include "Util/Platform.h"
 #include "Util/ThreadUtil.h"
 
 // External Library Headers

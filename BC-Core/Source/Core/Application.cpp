@@ -61,8 +61,6 @@ namespace BC
         PushOverlay(m_GUILayer);
 
         m_Window->SetupCallbacks();
-
-        m_Project = std::move(m_Specification.EntryProject);
         SceneRenderer::Init();
     
         BC_CATCH_END_FUNC([&]() { Close(); });

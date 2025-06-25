@@ -67,6 +67,8 @@ namespace BC
         void MarkHierarchyDirty() { m_HierarchyChangedThisFrame.store(true); }
         bool IsHierarchyDirty() const { return m_HierarchyChangedThisFrame.load(); }
 
+        void SaveScene();
+
     private:
 
         void Serialise();
