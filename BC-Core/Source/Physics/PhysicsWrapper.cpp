@@ -87,7 +87,11 @@ namespace BC
         if (!m_Handle)
             return;
 
-        if (Application::GetProject()->GetSceneManager()->IsPhysicsSimulating())
+        auto physics_ref = Application::GetProject()->GetSceneManager()->GetPhysicsSystem();
+        if (!physics_ref)
+            return;
+
+        if (physics_ref->IsPhysicsSimulating())
             m_DeferredForce.emplace_back(force, force_mode);
         else
             m_Handle->addForce(PxVec3(force.x, force.y, force.z), force_mode);
@@ -98,10 +102,30 @@ namespace BC
         if (!m_Handle)
             return;
 
-        if (Application::GetProject()->GetSceneManager()->IsPhysicsSimulating())
+        auto physics_ref = Application::GetProject()->GetSceneManager()->GetPhysicsSystem();
+        if (!physics_ref)
+            return;
+
+        if (physics_ref->IsPhysicsSimulating())
             m_DeferredTorque.emplace_back(torque);
         else
             m_Handle->addTorque(PxVec3(torque.x, torque.y, torque.z));
+    }
+
+    void RigidDynamic::ApplyDeferredForces()
+    {
+        if (m_DeferredForce.empty() && m_DeferredTorque.empty())
+            return;
+        
+        for (const auto& force : m_DeferredForce)
+        {
+            ApplyForce(force.force, force.force_mode);
+        }
+        
+        for (const auto& torque : m_DeferredTorque)
+        {
+            ApplyTorque(torque.torque);
+        }
     }
 
 #pragma endregion

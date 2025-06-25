@@ -243,21 +243,21 @@ namespace BC
 
 		// Text
 		colors[ImGuiCol_Text]					= ImVec4{ 0.875f, 0.875f, 0.875f, 1.0f };
-		colors[ImGuiCol_TextSelectedBg]			= ImVec4{ 1.0f, 0.842f, 0.227f, 0.349f };
+		colors[ImGuiCol_TextSelectedBg]			= ImVec4{ 0.314f, 0.493f, 0.575f, 0.416f };
 
 		// Separator
 		colors[ImGuiCol_Separator]				= ImVec4{ 0.0f, 0.0f, 0.0f, 1.0f };
 
 		// Windows
 		colors[ImGuiCol_WindowBg]				= ImVec4{ 0.22f, 0.22f, 0.22f, 1.0f };
-		colors[ImGuiCol_DockingPreview]			= ImVec4{ 1.0f, 0.842f, 0.227f, 0.381f };
+		colors[ImGuiCol_DockingPreview]			= ImVec4{ 0.314f, 0.493f, 0.575f, 0.416f };
 
 		// Borders
 		colors[ImGuiCol_Border]					= ImVec4{ 0.12f, 0.12f, 0.12f, 1.0f};
 		colors[ImGuiCol_BorderShadow]			= ImVec4{ 0.221f, 0.221f, 0.221f, 1.0f};
 
 		// Headers
-		colors[ImGuiCol_Header]					= ImVec4{ 1.0f, 0.842f, 0.227f, 0.416f };
+		colors[ImGuiCol_Header]					= ImVec4{ 0.314f, 0.493f, 0.575f, 0.416f };
 		colors[ImGuiCol_HeaderHovered]			= ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
 		colors[ImGuiCol_HeaderActive]			= ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 
@@ -265,7 +265,7 @@ namespace BC
 		colors[ImGuiCol_Button]					= ImVec4{ 0.165f, 0.165f, 0.165f, 1.0f };
 		colors[ImGuiCol_ButtonHovered]			= ImVec4{ 0.3f, 0.3f, 0.3f, 1.0f };
 		colors[ImGuiCol_ButtonActive]			= ImVec4{ 0.588f, 0.588f, 0.588f, 1.0f };
-		colors[ImGuiCol_CheckMark]				= ImVec4{ 1.0f, 0.842f, 0.227f, 1.0f };
+		colors[ImGuiCol_CheckMark]				= ImVec4{ 0.314f, 0.493f, 0.575f, 1.0f };
 
 		// Frame BG
 		colors[ImGuiCol_FrameBg]				= ImVec4{ 0.165f, 0.165f, 0.165f, 1.0f };
@@ -277,15 +277,15 @@ namespace BC
 		colors[ImGuiCol_TabHovered]				= ImVec4{ 0.22f, 0.22f, 0.22f, 1.0f };
 
 		colors[ImGuiCol_TabSelected]			= ImVec4{ 0.22f, 0.22f, 0.22f, 1.0f };
-		colors[ImGuiCol_TabSelectedOverline]	= ImVec4{ 1.0f, 0.842f, 0.227f, 1.0f };
+		colors[ImGuiCol_TabSelectedOverline]	= ImVec4{ 0.314f, 0.493f, 0.575f, 0.416f };
 
 		colors[ImGuiCol_TabDimmed]				= ImVec4{ 0.141f, 0.141f, 0.141f, 1.0f };
 		colors[ImGuiCol_TabDimmedSelected]		= ImVec4{ 0.22f, 0.22f, 0.22f, 1.0f };
 
 		// Resize
-		colors[ImGuiCol_ResizeGrip]				= ImVec4{ 1.0f, 0.842f, 0.227f, 0.50f };
-		colors[ImGuiCol_ResizeGripHovered]		= ImVec4{ 1.0f, 0.842f, 0.227f, 0.67f };
-		colors[ImGuiCol_ResizeGripActive]		= ImVec4{ 1.0f, 0.842f, 0.227f, 0.95f };
+		colors[ImGuiCol_ResizeGrip]				= ImVec4{ 0.314f, 0.493f, 0.575f, 0.416f };
+		colors[ImGuiCol_ResizeGripHovered]		= ImVec4{ 0.314f, 0.493f, 0.575f, 0.416f };
+		colors[ImGuiCol_ResizeGripActive]		= ImVec4{ 0.314f, 0.493f, 0.575f, 0.416f };
 
 		// Title
 		colors[ImGuiCol_TitleBg]				= ImVec4{ 0.157f, 0.157f, 0.157f, 1.0f };
@@ -293,7 +293,7 @@ namespace BC
 		colors[ImGuiCol_TitleBgCollapsed]		= colors[ImGuiCol_TitleBg];
 
 		// Drag and Drop
-		colors[ImGuiCol_DragDropTarget]			= ImVec4{ 1.0f, 0.842f, 0.227f, 0.416f };
+		colors[ImGuiCol_DragDropTarget]			= ImVec4{ 0.314f, 0.493f, 0.575f, 0.416f };
 	}
 
 	uint32_t GUILayer::GetActiveWidgetID() const

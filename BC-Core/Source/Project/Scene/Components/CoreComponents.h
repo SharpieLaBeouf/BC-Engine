@@ -3,6 +3,8 @@
 // Core Headers
 #include "Component Base.h"
 
+#include "Asset/Asset.h"
+
 // C++ Standard Library Headers
 #include <string>
 
@@ -40,7 +42,7 @@ namespace BC
         TransformComponent& operator=(const TransformComponent& other);
         TransformComponent& operator=(TransformComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::TransformComponent; }
+        ComponentType GetType() const override { return ComponentType::TransformComponent; }
         
     #pragma region General Methods
 
@@ -175,7 +177,7 @@ namespace BC
         MetaComponent& operator=(const MetaComponent& other);
         MetaComponent& operator=(MetaComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::MetaComponent; }
+        ComponentType GetType() const override { return ComponentType::MetaComponent; }
         
         // --- Name ---
         const std::string& GetName() const { return m_Name; }
@@ -207,8 +209,13 @@ namespace BC
         void AddScript(const std::string& script_name, bool active_state = true) { m_Scripts[script_name] = active_state; }
         void RemoveScript(const std::string& script_name) { if (m_Scripts.contains(script_name)) { m_Scripts.erase(script_name); } }
         void UpdateScriptActiveState(const std::string& script_name, bool active_state) { if (m_Scripts.contains(script_name)) { m_Scripts[script_name] = active_state; } }
-
+        
         bool HasScripts() const { return !m_Scripts.empty(); }
+        
+        // --- Scripts ---
+
+        AssetHandle GetPrefabHandle() const { return m_PrefabSourceHandle; }
+        void SetPrefabHandle(AssetHandle handle) { m_PrefabSourceHandle = handle; }
 
         // --- Serialisation ---
         void SceneSerialise(YAML::Emitter& out) const override;
@@ -232,7 +239,9 @@ namespace BC
         std::unordered_map<std::string, bool> m_Scripts = {};
 
         /// @brief This is the source asset handle of the prefab that this object is created from and linked to
-        GUID m_PrefabSourceHandle = NULL_GUID;
+        AssetHandle m_PrefabSourceHandle = NULL_GUID;
+
+        friend class HierarchyPanel;
 
     };
 

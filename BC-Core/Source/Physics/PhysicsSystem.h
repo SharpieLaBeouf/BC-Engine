@@ -1,8 +1,12 @@
 #pragma once
 
 // Core Headers
+#include "Core/GUID.h"
+
+#include "Project/Scene/Entity.h"
 
 // C++ Standard Library Headers
+#include <atomic>
 #include <memory>
 #include <unordered_set>
 
@@ -51,9 +55,27 @@ namespace BC
         void Init();
         void Shutdown();
 
+        PxScene* GetScene() { return m_PhysicsScene; }
+        bool IsPhysicsSimulating() const { return m_PhysicsSimulating.load(); }
+
+        /// @brief Perform the Physics Simulation
+        void OnUpdate();
+
+        /// @brief Update All TransformComponents Impacted by Physics Simulation, and Vice Versa, Update RigidDynamic's for Manual Changes to TransformComponent
+        void OnTransformUpdate();
+
+        /// @brief Mark an Entity as having their transform manually updated in
+        /// this frame meaning it will not receive changes from physics simulation. 
+        void MarkEntityTransformDirty(const Entity& entity) { m_ManualUpdatedRigidEntities.insert(entity); }
+
     private:
 
+        /// @brief This is a set of entities that have rigidbodies by their
+        /// transform has been manually changed through TransformComponent
+        std::unordered_set<Entity> m_ManualUpdatedRigidEntities = {};
+
         PxScene* m_PhysicsScene = nullptr;
+        std::atomic<bool> m_PhysicsSimulating = false;
 
         std::unique_ptr<CollisionCallback> m_Callback = nullptr;
 

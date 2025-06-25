@@ -49,6 +49,8 @@ namespace BC
 		std::filesystem::path WorkingDirectory;
         ApplicationCommandLineArgs CommandLineArgs;
 
+		std::unique_ptr<Project> EntryProject = nullptr;
+
 		glm::uvec2 WindowRes = { 1600, 900 };
 		WindowedMode WindowMode = WindowedMode::Windowed;
 		bool VSync = false;
@@ -61,16 +63,16 @@ namespace BC
     public:
 
         Application() = delete;
-		Application(const BCApplicationSpecification& specification);
+		Application(BCApplicationSpecification& specification);
 		virtual ~Application() = default;
 
-		static Application* 	Get() 			{ return s_Instance; 						}
-		static Window* 			GetWindow() 	{ return s_Instance->m_Window.get(); 		}
-		static VulkanCore* 		GetVulkanCore() { return s_Instance->m_VulkanCore.get(); 	}
-		static Project* 		GetProject() 	{ return s_Instance->m_Project.get(); 		}
-		static JobSystem*		GetJobSystem()	{ return s_Instance->m_JobSystem.get();		}
+		static Application* 	Get() 			{ return s_Instance ? s_Instance : nullptr; 					}
+		static Window* 			GetWindow() 	{ return s_Instance ? s_Instance->m_Window.get() : nullptr; 	}
+		static VulkanCore* 		GetVulkanCore() { return s_Instance ? s_Instance->m_VulkanCore.get() : nullptr; }
+		static Project* 		GetProject() 	{ return s_Instance ? s_Instance->m_Project.get() : nullptr; 	}
+		static JobSystem*		GetJobSystem()	{ return s_Instance ? s_Instance->m_JobSystem.get() : nullptr;	}
 
-		static GUILayer* 		GetGUILayer() 	{ return s_Instance->m_GUILayer; 			}
+		static GUILayer* 		GetGUILayer() 	{ return s_Instance ? s_Instance->m_GUILayer : nullptr;			}
 
 		const BCApplicationSpecification& GetSpecification() const { return m_Specification; }
 
@@ -85,6 +87,8 @@ namespace BC
 		void SetMinimised(bool is_minimised) { m_Minimised = is_minimised; }
 
         void Close();
+
+		void SetProject(std::unique_ptr<Project> project) { m_Project = std::move(project); }
 	
     private:
 
@@ -92,7 +96,6 @@ namespace BC
 		void ExecuteMainThreadQueue();
 
 		void OnAnimationBlending();
-		void OnPhysicsSimulation();
 		void OnAnimPhysTransformUpdate();
 
 		void OnUpdate();

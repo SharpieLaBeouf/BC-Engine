@@ -19,6 +19,15 @@
 
 namespace BC::Util
 {
+    static std::string NormaliseFilePathToString(const std::filesystem::path& file_path)
+    {
+        return file_path.generic_string();
+    }
+
+    static bool FilePathContains(const std::filesystem::path& file_path, const std::string& contain_string)
+    {
+        return file_path.generic_string().find(contain_string) != std::string::npos;
+    }
     
     static bool PathHasSubDirectory(const std::filesystem::path& directory_path) 
     {

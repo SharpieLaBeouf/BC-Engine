@@ -61,7 +61,7 @@ namespace BC
         RigidDynamic& operator=(const RigidDynamic& other) = delete;
         RigidDynamic& operator=(RigidDynamic&& other) noexcept;
 
-        explicit operator bool() const { return m_Handle != nullptr; }
+        bool IsValid() const { return m_Handle != nullptr; }
 
         PxRigidDynamic* GetHandle() { return m_Handle; }
 
@@ -100,6 +100,7 @@ namespace BC
 
 		void ApplyForce(const glm::vec3& force, PxForceMode::Enum force_mode = PxForceMode::eFORCE);
 		void ApplyTorque(const glm::vec3& torque);
+        void ApplyDeferredForces();
 
     private:
 
@@ -149,7 +150,7 @@ namespace BC
         PhysicsMaterial& operator=(const PhysicsMaterial& other);
         PhysicsMaterial& operator=(PhysicsMaterial&& other) noexcept;
 
-        explicit operator bool() const { return m_Handle != nullptr; }
+        bool IsValid() const { return m_Handle != nullptr; }
 
         void Init();
         void Shutdown();
@@ -193,7 +194,7 @@ namespace BC
         GUID GetRigidDynamicEntity() const { return m_RigidEntityID; }
         std::weak_ptr<RigidDynamic> GetStandaloneRigidDynamic() { return m_StandAloneRigidDynamic; }
 
-        explicit operator bool() const { return m_Handle != nullptr; }
+        bool IsValid() const { return m_Handle != nullptr; }
 
     protected:
 

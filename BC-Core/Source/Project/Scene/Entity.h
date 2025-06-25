@@ -43,17 +43,11 @@ namespace BC
 
 		// @brief This adds a Component to the applicable Entity, and returns that Component
 		template<typename T, typename... Args>
-		T& AddComponent(Args&&... args) 
-        {
-			return {};
-        }
+		T& AddComponent(Args&&... args);
         
 		/// @brief This removes any Component within the applicable Entity
 		template <typename T>
-		void RemoveComponent() 
-        {
-
-        }
+		void RemoveComponent();
 
 		void Destroy();
 
@@ -62,43 +56,22 @@ namespace BC
 #pragma region Getters
 
 		template<typename T>
-		T& GetComponent() const
-        {
-			static T temp{};
-			return temp;
-        }
+		T& GetComponent() const;
         
 		template<typename T>
-		T& GetComponentInParent() const
-		{
-			static T temp{};
-			return temp;
-        }
+		T& GetComponentInParent() const;
         
 		template<typename T>
-		T& GetComponentInChild() const
-		{
-			static T temp{};
-			return temp;
-        }
+		T& GetComponentInChild() const;
         
 		template<typename T>
-		std::vector<Entity> GetComponentsInParents() const
-		{
-			return {};
-        }
+		std::vector<Entity> GetComponentsInParents() const;
         
 		template<typename T>
-		std::vector<Entity> GetComponentsInChildren() const
-		{
-			return {};
-        }
+		std::vector<Entity> GetComponentsInChildren() const;
         
 		template<typename T>
-		std::vector<Entity> GetComponentsInSelfAndChildren() const
-		{
-			return {};
-        }
+		std::vector<Entity> GetComponentsInSelfAndChildren() const;
 
         GUID GetGUID() const { return GetComponent<MetaComponent>().GetEntityGUID(); }
 		const std::string& GetName() const { return GetComponent<MetaComponent>().GetName(); }
@@ -124,11 +97,6 @@ namespace BC
 
 #pragma endregion
 
-    private:
-    
-		Scene* m_Scene = nullptr;
-        entt::entity m_EntityHandle;
-
 		template<typename T>
 		static T& GetBlankComponent()
 		{
@@ -143,7 +111,26 @@ namespace BC
 			return *std::static_pointer_cast<T>(s_BlankComponents[typeid(T)]);
 		}
 
+    private:
+    
+		Scene* m_Scene = nullptr;
+        entt::entity m_EntityHandle;
+
 		friend struct ComponentBase;
     };
     
+}
+
+namespace std
+{
+	template<>
+	struct hash<BC::Entity>
+	{
+		std::size_t operator()(const BC::Entity& entity) const noexcept
+		{
+			return std::hash<uint64_t>()(
+				(static_cast<uint64_t>(static_cast<uint32_t>(static_cast<entt::entity>(entity))) << 32) ^
+				reinterpret_cast<uintptr_t>(entity.GetScene()));
+		}
+	};
 }

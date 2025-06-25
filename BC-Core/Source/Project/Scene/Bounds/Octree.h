@@ -457,7 +457,7 @@ namespace BC
 			/// </summary>
 			void RevalidateNodes(size_t start_index) {
 
-				BC_CORE_ASSERT(start_index + m_DataSourceSize <= m_Octree->m_DataSources.size(), "Octree - Index Out Of Bounds!");
+				BC_ASSERT(start_index + m_DataSourceSize <= m_Octree->m_DataSources.size(), "Octree - Index Out Of Bounds!");
 
 				m_DataSourceIndex = start_index;
 

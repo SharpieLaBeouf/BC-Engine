@@ -3,6 +3,8 @@
 // Core Headers
 #include "Asset/Asset.h"
 
+#include "Project/Scene/Bounds/Bounds.h"
+
 // C++ Standard Library Headers
 #include <vector>
 #include <memory>
@@ -35,12 +37,14 @@ namespace BC
 
         const std::vector<SubMesh>& GetSubMeshes() const { return m_SubMeshes; }
 
+		const Bounds_AABB& GetMeshBounds() const { return m_MeshBounds; }
+
     private:
 
 		std::vector<SubMesh> m_SubMeshes{};
 
-		// Bounds_AABB MeshBounds{};
-		bool ModifiedAABB = false;
+		Bounds_AABB m_MeshBounds{};
+		bool m_ModifiedAABB = false;
 
     };
 

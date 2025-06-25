@@ -19,8 +19,8 @@ namespace BC
 {
     Application* Application::s_Instance = nullptr;
 
-    Application::Application(const BCApplicationSpecification &specification) : 
-        m_Specification(specification),
+    Application::Application(BCApplicationSpecification &specification) : 
+        m_Specification(std::move(specification)),
         m_FrameStartSync(2),
         m_FrameRenderFinishedSync(2)
     {
@@ -62,7 +62,8 @@ namespace BC
 
         m_Window->SetupCallbacks();
 
-        m_Project = std::make_unique<Project>();
+        m_Project = std::move(m_Specification.EntryProject);
+        SceneRenderer::Init();
     
         BC_CATCH_END_FUNC([&]() { Close(); });
     }
@@ -106,7 +107,6 @@ namespace BC
             auto current_frame_index = m_VulkanCore->GetFrameIndex();
 
             JobCounter animation_blending_job_counter = {};
-            JobCounter physics_simulate_job_counter = {};
             JobCounter transform_update_job_counter = {}; // To be used after above two counters finished
 
             m_JobSystem->SubmitJob
@@ -118,26 +118,16 @@ namespace BC
                 false
             ); // Perform animation blending
 
-            m_JobSystem->SubmitJob
-            (
-                "Physics Simulation",
-                [&]() { OnPhysicsSimulation(); },
-                &physics_simulate_job_counter, 
-                JobPriority::Medium,
-                false
-            ); // Perform physics simulations
-
-            // Execute Main Thread Function Queue
-            ExecuteMainThreadQueue();
-
             OnUpdate();
             OnFixedUpdate();
             OnLateUpdate();
 
+            // Execute Main Thread Function Queue
+            ExecuteMainThreadQueue();
+
             // Scene's have been updated, now we can wait for Animation and
             // Physics prior to updating the ECS with those changes too
             animation_blending_job_counter.Wait();
-            physics_simulate_job_counter.Wait();
 
             m_JobSystem->SubmitJob
             (
@@ -203,7 +193,7 @@ namespace BC
 
         if (m_RenderThread.joinable())
             m_RenderThread.join();
-
+        
         Physics::Shutdown();
         Input::Shutdown();
         Time::Shutdown();
@@ -212,6 +202,8 @@ namespace BC
         m_JobSystem.reset();
 
         vkDeviceWaitIdle(m_VulkanCore->GetLogicalDevice());
+
+        SceneRenderer::Shutdown();
     }
 
     void Application::RenderThreadWorker(uint32_t thread_core)
@@ -326,14 +318,15 @@ namespace BC
 
     }
 
-    void Application::OnPhysicsSimulation()
-    {
-        
-    }
-
     void Application::OnAnimPhysTransformUpdate()
     {
-        
+        // 1. Update Physics Transforms
+        auto physics_system = m_Project->GetSceneManager()->GetPhysicsSystem();
+        if (physics_system)
+            physics_system->OnTransformUpdate();
+
+        // 2. Update Animation Transforms
+        // TODO: Implement
     }
 
     void Application::OnUpdate()

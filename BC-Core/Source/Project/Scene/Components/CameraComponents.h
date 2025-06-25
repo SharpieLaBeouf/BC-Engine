@@ -41,7 +41,7 @@ namespace BC
         bool Init() override;
         bool Shutdown() override;
 
-        ComponentType GetType() override { return ComponentType::CameraComponent; }
+        ComponentType GetType() const override { return ComponentType::CameraComponent; }
 
         SceneCamera* GetCamera() const { return m_Instance.get(); }
 

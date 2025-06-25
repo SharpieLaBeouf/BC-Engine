@@ -6,6 +6,7 @@
 
 namespace BC::Util
 {
+
     // fnv1a_hash
     constexpr uint64_t HashString(const char* str)
     {

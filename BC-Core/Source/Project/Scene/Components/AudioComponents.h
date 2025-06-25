@@ -29,7 +29,7 @@ namespace BC
         AudioListenerComponent& operator=(const AudioListenerComponent& other);
         AudioListenerComponent& operator=(AudioListenerComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::AudioListenerComponent; }
+        ComponentType GetType() const override { return ComponentType::AudioListenerComponent; }
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
@@ -52,7 +52,7 @@ namespace BC
         AudioEmitterComponent& operator=(const AudioEmitterComponent& other);
         AudioEmitterComponent& operator=(AudioEmitterComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::AudioEmitterComponent; }
+        ComponentType GetType() const override { return ComponentType::AudioEmitterComponent; }
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;

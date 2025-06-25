@@ -1,6 +1,8 @@
 #include "BC_PCH.h"
 #include "PhysicsComponents.h"
 
+#include <yaml-cpp/yaml.h>
+
 // TODO: Implement
 
 namespace BC
@@ -10,18 +12,22 @@ namespace BC
     
     RigidbodyComponent::RigidbodyComponent(const RigidbodyComponent& other)
     {
-
+        m_Rigid.SetProperties(other.m_Rigid.GetProperties());
     }
 
     RigidbodyComponent::RigidbodyComponent(RigidbodyComponent&& other) noexcept
     {
+		m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
+        m_Rigid = std::move(other.m_Rigid); other.m_Rigid = {};
     }
 
     RigidbodyComponent& RigidbodyComponent::operator=(const RigidbodyComponent& other)
     {
         if (this == &other)
             return *this;
+
+        m_Rigid.SetProperties(other.m_Rigid.GetProperties());
 
         return *this;
     }
@@ -31,17 +37,31 @@ namespace BC
         if (this == &other)
             return *this;
 
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
+        m_Rigid = std::move(other.m_Rigid); other.m_Rigid = {};
+
         return *this;
     }
+    
+    bool RigidbodyComponent::Init()
+    {
+        return false;
+    }
 
-    bool RigidbodyComponent::IsValid() const
+    bool RigidbodyComponent::Shutdown()
     {
         return false;
     }
 
     void RigidbodyComponent::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool RigidbodyComponent::SceneDeserialise(const YAML::Node& data)
@@ -60,6 +80,7 @@ namespace BC
 
     PlaneCollider::PlaneCollider(PlaneCollider&& other) noexcept
     {
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
     }
 
@@ -76,12 +97,29 @@ namespace BC
         if (this == &other)
             return *this;
 
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
         return *this;
+    }
+    
+    bool PlaneCollider::Init()
+    {
+        return false;
+    }
+
+    bool PlaneCollider::Shutdown()
+    {
+        return false;
     }
 
     void PlaneCollider::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool PlaneCollider::SceneDeserialise(const YAML::Node& data)
@@ -101,6 +139,8 @@ namespace BC
     BoxColliderComponent::BoxColliderComponent(BoxColliderComponent&& other) noexcept
     {
 
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
     }
 
     BoxColliderComponent& BoxColliderComponent::operator=(const BoxColliderComponent& other)
@@ -116,12 +156,29 @@ namespace BC
         if (this == &other)
             return *this;
 
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
         return *this;
+    }
+    
+    bool BoxColliderComponent::Init()
+    {
+        return false;
+    }
+
+    bool BoxColliderComponent::Shutdown()
+    {
+        return false;
     }
 
     void BoxColliderComponent::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool BoxColliderComponent::SceneDeserialise(const YAML::Node& data)
@@ -140,6 +197,7 @@ namespace BC
 
     SphereColliderComponent::SphereColliderComponent(SphereColliderComponent&& other) noexcept
     {
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
     }
 
@@ -156,12 +214,29 @@ namespace BC
         if (this == &other)
             return *this;
 
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
         return *this;
+    }
+    
+    bool SphereColliderComponent::Init()
+    {
+        return false;
+    }
+
+    bool SphereColliderComponent::Shutdown()
+    {
+        return false;
     }
 
     void SphereColliderComponent::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool SphereColliderComponent::SceneDeserialise(const YAML::Node& data)
@@ -180,6 +255,7 @@ namespace BC
 
     CapsuleColliderComponent::CapsuleColliderComponent(CapsuleColliderComponent&& other) noexcept
     {
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
     }
 
@@ -196,12 +272,29 @@ namespace BC
         if (this == &other)
             return *this;
 
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
         return *this;
+    }
+    
+    bool CapsuleColliderComponent::Init()
+    {
+        return false;
+    }
+
+    bool CapsuleColliderComponent::Shutdown()
+    {
+        return false;
     }
 
     void CapsuleColliderComponent::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool CapsuleColliderComponent::SceneDeserialise(const YAML::Node& data)
@@ -220,6 +313,7 @@ namespace BC
 
     ConvexMeshColliderComponent::ConvexMeshColliderComponent(ConvexMeshColliderComponent&& other) noexcept
     {
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
     }
 
@@ -236,12 +330,29 @@ namespace BC
         if (this == &other)
             return *this;
 
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
         return *this;
+    }
+    
+    bool ConvexMeshColliderComponent::Init()
+    {
+        return false;
+    }
+
+    bool ConvexMeshColliderComponent::Shutdown()
+    {
+        return false;
     }
 
     void ConvexMeshColliderComponent::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool ConvexMeshColliderComponent::SceneDeserialise(const YAML::Node& data)
@@ -260,6 +371,7 @@ namespace BC
 
     HeightFieldColliderComponent::HeightFieldColliderComponent(HeightFieldColliderComponent&& other) noexcept
     {
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
     }
 
@@ -276,12 +388,29 @@ namespace BC
         if (this == &other)
             return *this;
 
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
         return *this;
+    }
+    
+    bool HeightFieldColliderComponent::Init()
+    {
+        return false;
+    }
+
+    bool HeightFieldColliderComponent::Shutdown()
+    {
+        return false;
     }
 
     void HeightFieldColliderComponent::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool HeightFieldColliderComponent::SceneDeserialise(const YAML::Node& data)
@@ -300,6 +429,7 @@ namespace BC
 
     TriangleMeshColliderComponent::TriangleMeshColliderComponent(TriangleMeshColliderComponent&& other) noexcept
     {
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
     }
 
@@ -315,13 +445,30 @@ namespace BC
     {
         if (this == &other)
             return *this;
+            
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
         return *this;
+    }
+    
+    bool TriangleMeshColliderComponent::Init()
+    {
+        return false;
+    }
+
+    bool TriangleMeshColliderComponent::Shutdown()
+    {
+        return false;
     }
 
     void TriangleMeshColliderComponent::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool TriangleMeshColliderComponent::SceneDeserialise(const YAML::Node& data)

@@ -3,6 +3,8 @@
 // Core Headers
 #include "Component Base.h"
 
+#include "Physics/PhysicsWrapper.h"
+
 // C++ Standard Library Headers
 
 // External Vendor Library Headers
@@ -29,15 +31,19 @@ namespace BC
         RigidbodyComponent& operator=(const RigidbodyComponent& other);
         RigidbodyComponent& operator=(RigidbodyComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::RigidbodyComponent; }
+        ComponentType GetType() const override { return ComponentType::RigidbodyComponent; }
+
+        bool Init() override;
+        bool Shutdown() override;
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
 
-        bool IsValid() const;
+        RigidDynamic* GetRigid() { return &m_Rigid; }
 
     private:
         
+        RigidDynamic m_Rigid;
 
     };
     
@@ -54,7 +60,10 @@ namespace BC
         PlaneCollider& operator=(const PlaneCollider& other);
         PlaneCollider& operator=(PlaneCollider&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::PlaneCollider; }
+        ComponentType GetType() const override { return ComponentType::PlaneCollider; }
+
+        bool Init() override;
+        bool Shutdown() override;
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
@@ -77,7 +86,10 @@ namespace BC
         BoxColliderComponent& operator=(const BoxColliderComponent& other);
         BoxColliderComponent& operator=(BoxColliderComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::BoxColliderComponent; }
+        ComponentType GetType() const override { return ComponentType::BoxColliderComponent; }
+
+        bool Init() override;
+        bool Shutdown() override;
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
@@ -100,7 +112,10 @@ namespace BC
         SphereColliderComponent& operator=(const SphereColliderComponent& other);
         SphereColliderComponent& operator=(SphereColliderComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::SphereColliderComponent; }
+        ComponentType GetType() const override { return ComponentType::SphereColliderComponent; }
+
+        bool Init() override;
+        bool Shutdown() override;
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
@@ -123,7 +138,10 @@ namespace BC
         CapsuleColliderComponent& operator=(const CapsuleColliderComponent& other);
         CapsuleColliderComponent& operator=(CapsuleColliderComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::CapsuleColliderComponent; }
+        ComponentType GetType() const override { return ComponentType::CapsuleColliderComponent; }
+
+        bool Init() override;
+        bool Shutdown() override;
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
@@ -146,7 +164,10 @@ namespace BC
         ConvexMeshColliderComponent& operator=(const ConvexMeshColliderComponent& other);
         ConvexMeshColliderComponent& operator=(ConvexMeshColliderComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::ConvexMeshColliderComponent; }
+        ComponentType GetType() const override { return ComponentType::ConvexMeshColliderComponent; }
+
+        bool Init() override;
+        bool Shutdown() override;
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
@@ -169,7 +190,10 @@ namespace BC
         HeightFieldColliderComponent& operator=(const HeightFieldColliderComponent& other);
         HeightFieldColliderComponent& operator=(HeightFieldColliderComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::HeightFieldColliderComponent; }
+        ComponentType GetType() const override { return ComponentType::HeightFieldColliderComponent; }
+
+        bool Init() override;
+        bool Shutdown() override;
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
@@ -192,7 +216,10 @@ namespace BC
         TriangleMeshColliderComponent& operator=(const TriangleMeshColliderComponent& other);
         TriangleMeshColliderComponent& operator=(TriangleMeshColliderComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::TriangleMeshColliderComponent; }
+        ComponentType GetType() const override { return ComponentType::TriangleMeshColliderComponent; }
+
+        bool Init() override;
+        bool Shutdown() override;
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;

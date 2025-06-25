@@ -15,7 +15,7 @@ namespace BC
         {
 		    m_FileIcon = Texture2D::CreateTexture("Resources/Icons/FileIcon.png");
 		    m_FolderIcon = Texture2D::CreateTexture("Resources/Icons/FolderIcon.png");
-            m_CurrentDirectory = Application::GetProject()->GetDirectory() / "Assets";
+            SetCurrentDirectory(Application::GetProject()->GetDirectory() / "Assets");
         }
         
         ~ContentBrowserPanel() = default;
@@ -56,8 +56,8 @@ namespace BC
             }
         }
 
-        const std::filesystem::path& GetCurrentDirectory() const { return m_CurrentDirectory; }
-        void SetCurrentDirectory(const std::filesystem::path& path) { m_CurrentDirectory = path; }
+        const std::filesystem::path& GetCurrentDirectory() const { return m_Selection.GetSelection<std::filesystem::path>(); }
+        void SetCurrentDirectory(const std::filesystem::path& path) { m_Selection.SetSelection(path); }
 
     private:
 
@@ -72,8 +72,6 @@ namespace BC
 
         std::shared_ptr<Texture2D> m_FileIcon = nullptr;
         std::shared_ptr<Texture2D> m_FolderIcon = nullptr;
-
-        std::filesystem::path m_CurrentDirectory;
 
         friend class EditorLayer;
 

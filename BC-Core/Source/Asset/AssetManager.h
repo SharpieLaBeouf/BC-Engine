@@ -34,49 +34,104 @@ namespace BC
 	{
 
 	public:
+
+		EditorAssetManager() = default;
+		~EditorAssetManager() override = default;
     
-		std::shared_ptr<Asset> GetAsset(const AssetHandle& handle)
+		std::shared_ptr<Asset> GetAsset(const AssetHandle& handle) override
 		{
 			return nullptr;
 		}
 
-		std::shared_ptr<Shader> GetInbuiltShader(const std::string& default_shader_name, bool is_compute = false)
+		std::shared_ptr<Shader> GetInbuiltShader(const std::string& default_shader_name, bool is_compute = false) override
 		{
 			return nullptr;
 		}
 
-		bool IsAssetHandleValid(const AssetHandle& handle)
+		bool IsAssetHandleValid(const AssetHandle& handle) const override
 		{
 			return false;
 		}
 
-		bool IsAssetLoaded(const AssetHandle& handle)
+		bool IsAssetLoaded(const AssetHandle& handle) const override
 		{
 			return false;
 		}
 
-		AssetType GetAssetType(const AssetHandle& handle)
+		AssetType GetAssetType(const AssetHandle& handle) const override
 		{
 			return AssetType::Unknown;
 		}
 
-		void AddRuntimeAsset(std::shared_ptr<Asset> asset, AssetHandle asset_handle, AssetMetaData asset_meta_data)
+		void AddRuntimeAsset(std::shared_ptr<Asset> asset, AssetHandle asset_handle, AssetMetaData asset_meta_data) override
 		{
 
 		}
 
-		void RemoveRuntimeAsset(AssetHandle asset_handle)
+		void RemoveRuntimeAsset(AssetHandle asset_handle) override
 		{
 
 		}
 
-		void ClearRuntimeAssets()
+		void ClearRuntimeAssets() override
 		{
 
 		}
-
 
 	private:
 
 	};
+
+	class RuntimeAssetManager : public AssetManagerBase
+	{
+
+	public:
+
+		RuntimeAssetManager() = default;
+		~RuntimeAssetManager() override = default;
+    
+		std::shared_ptr<Asset> GetAsset(const AssetHandle& handle) override
+		{
+			return nullptr;
+		}
+
+		std::shared_ptr<Shader> GetInbuiltShader(const std::string& default_shader_name, bool is_compute = false) override
+		{
+			return nullptr;
+		}
+
+		bool IsAssetHandleValid(const AssetHandle& handle) const override
+		{
+			return false;
+		}
+
+		bool IsAssetLoaded(const AssetHandle& handle) const override
+		{
+			return false;
+		}
+
+		AssetType GetAssetType(const AssetHandle& handle) const override
+		{
+			return AssetType::Unknown;
+		}
+
+		void AddRuntimeAsset(std::shared_ptr<Asset> asset, AssetHandle asset_handle, AssetMetaData asset_meta_data) override
+		{
+
+		}
+
+		void RemoveRuntimeAsset(AssetHandle asset_handle) override
+		{
+
+		}
+
+		void ClearRuntimeAssets() override
+		{
+
+		}
+
+	private:
+
+	};
+
 }

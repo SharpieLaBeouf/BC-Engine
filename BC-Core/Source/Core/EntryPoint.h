@@ -7,6 +7,8 @@ namespace BC
 {
 	int Main_Entry(int argc, char** argv)
 	{
+		BC_CATCH_BEGIN();
+		
 		BC::LoggingSystem::Init();
 
 		auto app = CreateApplication({ argc, argv });
@@ -17,6 +19,8 @@ namespace BC
 		app->Run();
 
 		delete app;
+
+		BC_CATCH_END_RETURN(BCResult::BC_ERROR_UNKNOWN);
 
 		return BC_SUCCESS;
 	}

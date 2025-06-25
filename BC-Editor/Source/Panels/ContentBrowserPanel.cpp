@@ -99,30 +99,39 @@ namespace BC
             {
 				for (const auto& entry : std::filesystem::directory_iterator(current_directory_path)) 
                 {
-					std::filesystem::path entry_path = entry.path().lexically_normal();
+					std::filesystem::path entry_path = entry.path();
+
+					if (Util::FilePathContains(entry_path, "Scripts/Bin") 			 ||
+						Util::FilePathContains(entry_path, "Scripts/Generated") 	 ||
+						Util::FilePathContains(entry_path, "Scripts/ScriptCoreAPI")	)
+						continue;
 
 					if (entry.is_directory() && !Util::IsPathHidden(entry.path())) 
                     {
 						bool is_leaf_node = !Util::PathHasSubDirectory(entry_path);
 
 						ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-						flags |= entry_path == m_CurrentDirectory ? ImGuiTreeNodeFlags_Selected : 0;
+						flags |= entry_path == GetCurrentDirectory() ? ImGuiTreeNodeFlags_Selected : 0;
 						flags |= is_leaf_node ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow;
-
-						bool tree_node_opened = ImGui::TreeNodeEx((entry_path.filename().string() + "##" + entry_path.string()).c_str(), flags);
+						
+						std::string label = entry_path.filename().string();
+						std::string id = entry_path.string(); // Guaranteed unique
+						ImGui::PushID(id.c_str());
+						bool tree_node_opened = ImGui::TreeNodeEx(label.c_str(), flags);
+						ImGui::PopID();
 
 						DirectoryFolderDropSource(entry_path);
 						if (DirectoryFolderDropTarget(entry_path))
 						{
-							m_CurrentDirectory = entry_path;
+							SetCurrentDirectory(entry_path);
 							ImGui::TreePop();
 							return false;
 						}
-
+						
 						// This path tree node has been clicked
 						if (ImGui::IsItemClicked()) 
                         {
-							m_CurrentDirectory = entry_path;
+							SetCurrentDirectory(entry_path);
 						}
 
 						if (tree_node_opened) 
@@ -140,51 +149,81 @@ namespace BC
 			};
 
 			// --------------- SIDE BAR ROOT FOLDERS ---------------
+			ImGui::SeparatorText(Application::GetProject()->GetName().c_str()); 
 			for (int i = 0; i < 3; i++) 
             {
 				std::filesystem::path side_bar_root_path;
 				
 				switch (i) 
                 {
-					case 0: ImGui::SeparatorText("Assets"); side_bar_root_path = Application::GetProject()->GetDirectory() / "Assets"; break;	// --------------- ASSETS ---------------
-					case 1: ImGui::SeparatorText("Scenes"); side_bar_root_path = Application::GetProject()->GetDirectory() / "Scenes"; break;	// --------------- SCENES ---------------
-					case 2: ImGui::SeparatorText("Scripts"); side_bar_root_path = Application::GetProject()->GetDirectory() / "Scripts"; break;	// --------------- SCRIPTS ---------------
+					case 0: side_bar_root_path = Application::GetProject()->GetDirectory() / "Assets"; break;	// --------------- ASSETS ---------------
+					case 1: side_bar_root_path = Application::GetProject()->GetDirectory() / "Scenes"; break;	// --------------- SCENES ---------------
+					case 2: side_bar_root_path = Application::GetProject()->GetDirectory() / "Scripts"; break;	// --------------- SCRIPTS ---------------
 				}
 
 				ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-				flags |= m_CurrentDirectory == side_bar_root_path ? ImGuiTreeNodeFlags_Selected : 0;
-				flags |= Util::PathHasSubDirectory(side_bar_root_path) ? ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_Leaf;
-				if (ImGui::TreeNodeEx(side_bar_root_path.filename().string().c_str(), flags))
-				{
-					if(DirectoryFolderDropTarget(side_bar_root_path))
-                    {
-						m_CurrentDirectory = side_bar_root_path;
-                    }
+				flags |= GetCurrentDirectory() == side_bar_root_path ? ImGuiTreeNodeFlags_Selected : 0;
 
-					if (ImGui::IsItemClicked()) 
-                    {
-						m_CurrentDirectory = side_bar_root_path;
+				if (i != 2)
+				{
+					flags |= Util::PathHasSubDirectory(side_bar_root_path) ? ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_Leaf;
+				}
+				else
+				{
+					// Ensure Correct Tree Node Flags Set - this ensures that
+					// any folders that are deemed "excluded" are not included
+					// in the side bar
+					bool only_excluded = true;
+					for (const auto& entry : std::filesystem::directory_iterator(side_bar_root_path))
+					{
+						if (!entry.is_directory())
+							continue;
+
+						auto& path = entry.path();
+						if (Util::FilePathContains(path, "Scripts/Bin") 			||
+							Util::FilePathContains(path, "Scripts/Generated") 	 	||
+							Util::FilePathContains(path, "Scripts/ScriptCoreAPI")	)
+							{
+								continue;
+							}
+						only_excluded = false;
+						break;
 					}
 
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
-					recursive_directory_display(side_bar_root_path);
-					ImGui::PopStyleVar();
-
-					ImGui::TreePop();
+					flags |= only_excluded ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
 				}
-				else 
+
+				bool folder_opened = ImGui::TreeNodeEx(side_bar_root_path.filename().string().c_str(), flags);
+				
+				if (DirectoryFolderDropTarget(side_bar_root_path))
 				{
-					if (DirectoryFolderDropTarget(side_bar_root_path))
-                    {
-						m_CurrentDirectory = side_bar_root_path;
-                    }
-
-					if (ImGui::IsItemClicked()) 
-                    {
-						m_CurrentDirectory = side_bar_root_path;
-					}
+					SetCurrentDirectory(side_bar_root_path);
 				}
 
+				// Capture if Clicking the Label Component of TreeNode to Select This Entity
+				{
+					const ImGuiStyle& style = ImGui::GetStyle();
+					float font_size = ImGui::GetFontSize();
+					float padding_x = style.FramePadding.x;
+					float text_offset_x = font_size + ((flags & ImGuiTreeNodeFlags_Framed) ? padding_x * 3.0f : padding_x * 2.0f);
+
+					ImVec2 item_min = ImGui::GetItemRectMin();
+					ImVec2 item_max = ImGui::GetItemRectMax();
+					ImVec2 label_min(item_min.x + text_offset_x, item_min.y);
+					ImVec2 label_max(item_max.x, item_max.y);
+
+					if (ImGui::IsMouseHoveringRect(label_min, label_max) && ImGui::IsMouseClicked(0))
+						SetCurrentDirectory(side_bar_root_path);
+				}
+
+				if (!folder_opened)
+					continue;
+				
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
+				recursive_directory_display(side_bar_root_path);
+				ImGui::PopStyleVar();
+
+				ImGui::TreePop();
 			}
 
 		}
@@ -193,7 +232,7 @@ namespace BC
 
     void ContentBrowserPanel::DrawTopNavigation()
     {
-        std::filesystem::path current_lexical_normal = m_CurrentDirectory.lexically_normal();
+        std::filesystem::path current_lexical_normal = GetCurrentDirectory().lexically_normal();
         std::filesystem::path parent_lexical_normal;
 
         std::filesystem::path relative_path = std::filesystem::relative(current_lexical_normal, Application::GetProject()->GetDirectory());
@@ -223,7 +262,7 @@ namespace BC
 
                 if (ImGui::Button((accumulated_path.filename().string() + "##" + accumulated_path.string()).c_str())) 
                 {
-                    m_CurrentDirectory = accumulated_path; // Set the full path here.
+					SetCurrentDirectory(accumulated_path);
                 }
 
                 ImGui::PopStyleColor(2);
@@ -246,8 +285,8 @@ namespace BC
 			int num_columns = std::truncf(available_width / icon_size) > 0.0f ? (int)std::truncf(available_width / icon_size) : 4;
 
 			// Start the table with the specified number of columns
-			if (ImGui::BeginTable("FileTable", num_columns, ImGuiTableFlags_NoSavedSettings)) {
-
+			if (ImGui::BeginTable("FileTable", num_columns, ImGuiTableFlags_NoSavedSettings)) 
+			{
 				static bool image_button_clicked = false;
 				static std::filesystem::path path_clicked = "";
 
@@ -257,8 +296,9 @@ namespace BC
 				static bool first_focus = true; // Track if this is the first time the InputText box gets focus
 
 				// Check for right-click on blank space
-				if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsWindowHovered()) {
-					ImGui::OpenPopup("BlankSpaceContextMenu");
+				if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsWindowHovered()) 
+				{
+					ImGui::OpenPopup("Content_Browser_ContextMenu");
 					image_button_clicked = false;
 				}
 
@@ -266,7 +306,7 @@ namespace BC
 				std::vector<std::filesystem::directory_entry> directories;
 				std::vector<std::filesystem::directory_entry> files;
 
-				for (const auto& entry : std::filesystem::directory_iterator(m_CurrentDirectory)) 
+				for (const auto& entry : std::filesystem::directory_iterator(GetCurrentDirectory())) 
                 {
 					if (std::filesystem::is_directory(entry) && !Util::IsPathHidden(entry.path())) 
                     {
@@ -295,8 +335,8 @@ namespace BC
 				// Combine directories and files back
 				directories.insert(directories.end(), files.begin(), files.end());
 
-				for (const auto& entry : directories) {
-
+				for (const auto& entry : directories) 
+				{
 					// Start a new row (ImGui will automatically handle row creation)
 					ImGui::TableNextColumn();  // Move to the next column in the table
 
@@ -309,7 +349,7 @@ namespace BC
 						ImGui::ImageButton(entry.path().string().c_str(), (ImTextureID)m_FolderIcon->GetDescriptor(), { 64.0f, 64.0f }, { 0, 1 }, { 1, 0 });
 						if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) 
                         {
-							m_CurrentDirectory = entry.path();
+							SetCurrentDirectory(entry.path());
 						}
 
 						DirectoryFolderDropSource(entry.path());
@@ -321,7 +361,7 @@ namespace BC
                         {
 							image_button_clicked = true;
 							path_clicked = entry.path();
-							ImGui::OpenPopup("ItemContextMenu");
+							ImGui::OpenPopup("Content_Browser_ItemContextMenu");
 						}
 					}
 					else if (entry.is_regular_file()) // ----------- REGULAR FILE -----------
@@ -407,7 +447,7 @@ namespace BC
                         {
 							image_button_clicked = true;
 							path_clicked = entry.path();
-							ImGui::OpenPopup("ItemContextMenu");
+							ImGui::OpenPopup("Content_Browser_ItemContextMenu");
 						}
 					}
 
@@ -420,12 +460,8 @@ namespace BC
 
 						if (first_focus) 
                         {
-							#if defined(BC_PLATFORM_WINDOWS)
-								strncpy_s(buf, new_path_file_name.c_str(), sizeof(buf));
-							#else
-								strncpy(buf, new_path_file_name.c_str(), sizeof(buf));
-							#endif
-							
+							strncpy(buf, new_path_file_name.c_str(), sizeof(buf));
+    						ImGui::SetKeyboardFocusHere();
 						}
 
 						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
@@ -478,7 +514,7 @@ namespace BC
 				if (image_button_clicked) {
 					
 					// Handle item-specific context menu
-					if (ImGui::BeginPopup("ItemContextMenu")) {
+					if (ImGui::BeginPopup("Content_Browser_ItemContextMenu")) {
 
 						if (ImGui::MenuItem(std::filesystem::is_directory(path_clicked) ? "Open Directory In File Explorer" : "Open File")) 
                         {
@@ -508,14 +544,14 @@ namespace BC
 						path_clicked = "";
 					}
 				}
-				else {
-
+				else 
+				{
 					// Handle blank space context menu
-					if (ImGui::BeginPopup("BlankSpaceContextMenu")) 
+					if (ImGui::BeginPopup("Content_Browser_ContextMenu")) 
                     {
 						if (ImGui::MenuItem("Create New Folder")) 
                         {
-							std::filesystem::path file_path = m_CurrentDirectory / "New Folder";
+							std::filesystem::path file_path = GetCurrentDirectory() / "New Folder";
 
 							if (!std::filesystem::exists(file_path))
 							{
@@ -528,8 +564,8 @@ namespace BC
 						}
 
 						// Scripts Folder
-						if (m_CurrentDirectory.lexically_normal().string().find((Application::GetProject()->GetDirectory() / "Scripts").lexically_normal().string()) != std::string::npos) {
-
+						if (GetCurrentDirectory().lexically_normal().string().find((Application::GetProject()->GetDirectory() / "Scripts").lexically_normal().string()) != std::string::npos) 
+						{
 							if (ImGui::MenuItem("Create New Script")) 
                             {
                                 
@@ -537,7 +573,7 @@ namespace BC
 						}
 
 						// Assets Folder
-						if (m_CurrentDirectory.lexically_normal().string().find((Application::GetProject()->GetDirectory() / "Assets").lexically_normal().string()) != std::string::npos) 
+						if (GetCurrentDirectory().lexically_normal().string().find((Application::GetProject()->GetDirectory() / "Assets").lexically_normal().string()) != std::string::npos) 
                         {
 							if (ImGui::MenuItem("Create New Material")) 
                             {
@@ -566,7 +602,7 @@ namespace BC
 						}
 
 						// Scenes Folder
-						if (m_CurrentDirectory.lexically_normal().string().find((Application::GetProject()->GetDirectory() / "Scenes").lexically_normal().string()) != std::string::npos) 
+						if (GetCurrentDirectory().lexically_normal().string().find((Application::GetProject()->GetDirectory() / "Scenes").lexically_normal().string()) != std::string::npos) 
                         {
 							if (ImGui::MenuItem("Create New Scene"))
 							{
@@ -578,7 +614,7 @@ namespace BC
 
 						if (ImGui::MenuItem("Open Directory In File Explorer")) 
                         {
-							std::string command = "explorer \"" + m_CurrentDirectory.string() + "\"";
+							std::string command = "explorer \"" + GetCurrentDirectory().string() + "\"";
 							std::system(command.c_str());
 						}
 

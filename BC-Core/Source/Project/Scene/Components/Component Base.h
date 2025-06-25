@@ -101,11 +101,9 @@ namespace BC
     #pragma region Component Group
 
         template<typename... Component>
-        struct ComponentGroup {};
+        struct ComponentGroup { };
         
         using AllComponents = ComponentGroup <
-
-            ComponentBase,
 
             // Default
             TransformComponent,
@@ -146,6 +144,29 @@ namespace BC
 
         >;
 
+        #define EXPAND_COMPONENTS(FUNC) \
+            FUNC(TransformComponent) \
+            FUNC(MetaComponent) \
+            FUNC(CameraComponent) \
+            FUNC(AudioListenerComponent) \
+            FUNC(AudioEmitterComponent) \
+            FUNC(LODMeshComponent) \
+            FUNC(MeshRendererComponent) \
+            FUNC(SkinnedMeshRendererComponent) \
+            FUNC(SimpleAnimationComponent) \
+            FUNC(AnimatorComponent) \
+            FUNC(SphereLightComponent) \
+            FUNC(ConeLightComponent) \
+            FUNC(DirectionalLightComponent) \
+            FUNC(RigidbodyComponent) \
+            FUNC(PlaneCollider) \
+            FUNC(BoxColliderComponent) \
+            FUNC(SphereColliderComponent) \
+            FUNC(CapsuleColliderComponent) \
+            FUNC(ConvexMeshColliderComponent) \
+            FUNC(HeightFieldColliderComponent) \
+            FUNC(TriangleMeshColliderComponent)
+
     #pragma endregion
 
     #pragma region Component Type to and From String
@@ -167,7 +188,7 @@ namespace BC
 
     public:
 
-        virtual ComponentType GetType() = 0;
+        virtual ComponentType GetType() const = 0;
         virtual void SceneSerialise(YAML::Emitter& out) const = 0;
         virtual bool SceneDeserialise(const YAML::Node& data) = 0;
 
@@ -183,10 +204,8 @@ namespace BC
         virtual bool Init()     { return true; } 
         virtual bool Shutdown() { return true; }
 
-        GUID GetGUID() const;
-        void SetGUID(GUID entity_guid);
-
         Entity GetEntity() const;
+        void SetEntity(const Entity& entity);
 
         template<typename T>
         T& GetComponent() const;
@@ -205,7 +224,7 @@ namespace BC
 
     protected:
 
-        GUID m_EntityID = NULL_GUID;
+        std::shared_ptr<Entity> m_Entity = nullptr;
 
     };
 

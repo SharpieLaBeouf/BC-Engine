@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Selection/SelectionContext.h"
+
 #include <string>
 #include <cstdint>
 
@@ -65,11 +67,13 @@ namespace BC
         virtual void OnUpdate() { }
         virtual void OnRenderGUI() = 0;
 
+        SelectionContext* GetSelectionContext() { return &m_Selection; }
+
     protected:
 
         bool m_Active = true;
-
         EditorLayer* m_EditorLayer = nullptr;
+        SelectionContext m_Selection;
 
         friend class EditorLayer;
 

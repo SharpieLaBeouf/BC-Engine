@@ -27,7 +27,7 @@ namespace BC
 
     TransformComponent::TransformComponent(TransformComponent&& other) noexcept
     {
-        m_EntityID = other.m_EntityID;                  other.m_EntityID = NULL_GUID;
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
         m_LocalPosition = other.m_LocalPosition;        other.m_LocalPosition = glm::vec3(0.0f);
         m_LocalEulerHint = other.m_LocalEulerHint;      other.m_LocalEulerHint = glm::vec3(0.0f);
@@ -62,7 +62,7 @@ namespace BC
         if (this == &other)
             return *this;
 
-        m_EntityID = other.m_EntityID;                  other.m_EntityID = NULL_GUID;
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
         m_LocalPosition = other.m_LocalPosition;        other.m_LocalPosition = glm::vec3(0.0f);
         m_LocalEulerHint = other.m_LocalEulerHint;      other.m_LocalEulerHint = glm::vec3(0.0f);
@@ -99,10 +99,17 @@ namespace BC
                 return;
             }
 
-            // We do this as we don't want to trigger rigidbody changes in child entities, only this entity's rigidbody will be notified.
-            if (entity.HasComponent<RigidbodyComponent>() && entity.GetComponent<RigidbodyComponent>().IsValid())
+            // We do this as we don't want to trigger rigidbody changes in child
+            // entities, only this entity's rigidbody will be marked not to take
+            // on simulation changes.
+            auto project = Application::GetProject();
+            if (project)
             {
-                // TODO: entity.GetComponent<RigidbodyComponent>().GetActor()->AddFlag(RigidbodyFlag_TransformUpdated);
+                auto physics_system = project->GetSceneManager()->GetPhysicsSystem();
+                if (physics_system && entity.HasComponent<RigidbodyComponent>())
+                {
+                    physics_system->MarkEntityTransformDirty(entity);
+                }
             }
 
             OnTransformUpdated();
@@ -138,9 +145,14 @@ namespace BC
 
         // Recursive down the tree
         // TODO: Jobify
+        
+        auto project = Application::GetProject();
+        if (!project)
+            return;
+
         for (const auto& child_guid : entity.GetComponent<MetaComponent>().GetChildrenGUID()) 
         {
-            Entity child_entity = Application::GetProject()->GetSceneManager()->GetEntity(child_guid);
+            Entity child_entity = project->GetSceneManager()->GetEntity(child_guid);
             if (!child_entity)
             {
                 continue;
@@ -647,12 +659,20 @@ namespace BC
             glm::vec3 old_global_scale = GetScaleFromMatrix(m_GlobalMatrix);
 
             auto& meta_component = entity.GetComponent<MetaComponent>();
-            Entity parent_entity = Application::GetProject()->GetSceneManager()->GetEntity(meta_component.GetParentGUID());
-            if (parent_entity)
+            auto project = Application::GetProject();
+            if (project)
             {
-                m_GlobalMatrix = parent_entity.GetTransform().GetGlobalMatrix() * GetLocalMatrix();
+                Entity parent_entity = project->GetSceneManager()->GetEntity(meta_component.GetParentGUID());
+                if (parent_entity)
+                {
+                    m_GlobalMatrix = parent_entity.GetTransform().GetGlobalMatrix() * GetLocalMatrix();
+                }
+                else if (!meta_component.HasParent())
+                {
+                    m_GlobalMatrix = m_LocalMatrix;
+                }
             }
-            else if (!meta_component.HasParent())
+            else
             {
                 m_GlobalMatrix = m_LocalMatrix;
             }
@@ -742,9 +762,13 @@ namespace BC
         return glm::normalize(glm::vec3(matrix * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f)));
     }
 
+#pragma endregion
+
+#pragma region Serialisation
+
     void TransformComponent::SceneSerialise(YAML::Emitter& out) const
     {
-        out << YAML::Key << "TransformComponent";
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
         out << YAML::BeginMap;
         {
             out << YAML::Key << "Position" << YAML::Value << YAML::Flow
@@ -839,18 +863,41 @@ namespace BC
 
     MetaComponent::MetaComponent(const MetaComponent &other)
     {
-
+        m_Name = other.m_Name;
+        m_EntityID = other.m_EntityID;
+        m_Parent = other.m_Parent;
+        m_Children = other.m_Children;
+        m_Scripts = other.m_Scripts;
+        m_PrefabSourceHandle = other.m_PrefabSourceHandle;
     }
 
     MetaComponent::MetaComponent(MetaComponent&& other) noexcept
     {
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
+        m_Name = std::move(other.m_Name);
+        m_EntityID = other.m_EntityID;
+        m_Parent = other.m_Parent;
+        m_Children = std::move(other.m_Children);
+        m_Scripts = std::move(other.m_Scripts);
+        m_PrefabSourceHandle = other.m_PrefabSourceHandle;
+
+        other.m_EntityID = NULL_GUID;
+        other.m_Parent = NULL_GUID;
+        other.m_PrefabSourceHandle = NULL_GUID;
     }
 
     MetaComponent& MetaComponent::operator=(const MetaComponent& other)
     {
         if (this == &other)
             return *this;
+            
+        m_Name = other.m_Name;
+        m_EntityID = other.m_EntityID;
+        m_Parent = other.m_Parent;
+        m_Children = other.m_Children;
+        m_Scripts = other.m_Scripts;
+        m_PrefabSourceHandle = other.m_PrefabSourceHandle;
 
         return *this;
     }
@@ -859,15 +906,29 @@ namespace BC
     {
         if (this == &other)
             return *this;
+            
+        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
+        m_Name = std::move(other.m_Name);
+        m_EntityID = other.m_EntityID;
+        m_Parent = other.m_Parent;
+        m_Children = std::move(other.m_Children);
+        m_Scripts = std::move(other.m_Scripts);
+        m_PrefabSourceHandle = other.m_PrefabSourceHandle;
+
+        other.m_EntityID = NULL_GUID;
+        other.m_Parent = NULL_GUID;
+        other.m_PrefabSourceHandle = NULL_GUID;
 
         return *this;
     }
 
-    void MetaComponent::SetUniqueName(const std::string &new_name)
+    void MetaComponent::SetUniqueName(const std::string& new_name)
     {
+        std::string temp_name = new_name;
         if (new_name.empty()) 
         {
-            SetUniqueName("Untitled Entity");
+            temp_name = "Untitled Entity";
             return;
         }
 
@@ -914,9 +975,9 @@ namespace BC
         };
 
         // If the name is already unique, set it directly
-        if (!check_names(new_name)) 
+        if (!check_names(temp_name)) 
         {
-            m_Name = new_name;
+            m_Name = temp_name;
             return;
         }
 
@@ -925,7 +986,7 @@ namespace BC
         int suffix = 1;
         do 
         {
-            unique_name = new_name + " (" + std::to_string(suffix) + ")";
+            unique_name = temp_name + " (" + std::to_string(suffix) + ")";
             suffix++;
         } while (check_names(unique_name));
 
@@ -954,11 +1015,28 @@ namespace BC
 
         for (const auto& child_uuid : m_Children) 
         {
-            if (child_uuid == new_parent_guid) {
+            if (child_uuid == new_parent_guid) 
+            {
                 BC_CORE_WARN("MetaComponent::AttachParent: Cannot Attach Child Entity As New Parent!");
                 return;
             }
+        }
 
+        for (auto& child_entity : GetComponentsInChildren<MetaComponent>()) 
+        {
+            for (const auto& child_uuid : child_entity.GetComponent<MetaComponent>().GetChildrenGUID())
+            {
+                if (child_uuid == new_parent_guid) 
+                {
+                    BC_CORE_WARN("MetaComponent::AttachParent: Cannot Attach Ancestor to Descendent!");
+                    return;
+                }
+            }
+        }
+
+        if (auto scene_ref = entity.GetScene(); scene_ref)
+        {
+            scene_ref->MarkHierarchyDirty();
         }
 
         // 1. Is this Current Entity already connected to another parent? If so call DetachParent first
@@ -971,6 +1049,8 @@ namespace BC
             BC_CORE_ERROR("MetaComponent::AttachParent: Cannot Attach Parent - Parent Entity Is Invalid! Entity({0}) will be at the root of the scene now.", entity.GetName());
             return;
         }
+        
+        // TODO: If New Parent is in another scene we need to MOVE this from one scene to the other
 
         // 2. Convert Current Global Transform to Local Transform relative to new parent
         // Get references to the relevant components
@@ -1033,6 +1113,11 @@ namespace BC
         {
             BC_CORE_ERROR("MetaComponent::DetachParent: Cannot Detach Parent - Current Entity Is Invalid!");
             return;
+        }
+
+        if (auto scene_ref = entity.GetScene(); scene_ref)
+        {
+            scene_ref->MarkHierarchyDirty();
         }
 
         // 1. Calculate the child's global transform
@@ -1284,12 +1369,18 @@ namespace BC
                 return parent.GetGUID();
         }
 
-        return GetGUID();
+        auto entity = GetEntity();
+        if (!entity)
+            return NULL_GUID;
+
+        return entity.GetGUID();
     }
+
+#pragma region Serialisation
 
     void MetaComponent::SceneSerialise(YAML::Emitter& out) const
     {
-        out << YAML::Key << "MetaComponent" << YAML::Value;
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
         out << YAML::BeginMap;
         {
             out << YAML::Key << "Name" << YAML::Value << m_Name;
@@ -1362,6 +1453,8 @@ namespace BC
         return true;
     }
     
+#pragma endregion
+
 #pragma endregion
 
 }

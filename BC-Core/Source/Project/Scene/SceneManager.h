@@ -1,6 +1,8 @@
 #pragma once
 
 // Core Headers
+#include "Core/GUID.h"
+
 #include "Scene.h"
 #include "Entity.h"
 
@@ -8,12 +10,28 @@
 
 // C++ Standard Library Headers
 #include <memory>
-#include <vector>
+#include <filesystem>
+#include <unordered_map>
 
 // External Vendor Library Headers
 
+namespace physx
+{
+    class PxScene;
+}
+
+namespace YAML
+{
+    class Emitter;
+    class Node;
+}
+
+using namespace physx;
+
 namespace BC
 {
+
+    class CollisionCallback;
 
     class SceneManager
     {
@@ -33,6 +51,8 @@ namespace BC
         //          Entities
         // ----------------------------
 
+        #pragma region Entities
+
         Entity GetEntity(GUID entity_guid) const;
         Entity GetEntity(const std::string& entity_name) const;
 
@@ -44,9 +64,13 @@ namespace BC
         void DestroyEntity(GUID entity_guid) const;
         void DestroyEntity(const std::string& entity_name) const;
         
+        #pragma endregion
+
         // ----------------------------
         //     Scene Functionality
         // ----------------------------
+
+        #pragma region Scene Functionality
 
         void OnStart();
         void OnStop();
@@ -72,16 +96,18 @@ namespace BC
 
         bool IsPaused() const { return m_IsPaused; }
         void SetPaused(bool paused) { m_IsPaused = paused; }
+        
+        PhysicsSystem* GetPhysicsSystem() const { return m_PhysicsSystem.get(); }
 
-        bool IsPhysicsSimulating() const { return m_PhysicsSimulating; }
-
-        const std::vector<std::shared_ptr<Scene>>& GetActiveScenes() const { return m_ActiveScenes; }
+        std::unordered_map<GUID, std::shared_ptr<Scene>>& GetSceneInstances() { return m_SceneInstances; }
+        std::unordered_map<GUID, std::filesystem::path>& GetSceneFilePaths() { return m_SceneFilePaths; }
+        std::shared_ptr<Scene> GetPersistentScene() { return m_PersistentScene; }
 
         template<typename... Components>
         std::vector<Entity> GetAllEntitiesWithComponent() const
         {
             std::vector<Entity> result;
-            for (const auto& scene : m_ActiveScenes)
+            for(auto [scene_id, scene] : m_SceneInstances)
             {
                 auto scene_view = scene->m_Registry.view<Components...>();
                 for (const auto& entity_handle : scene_view)
@@ -92,17 +118,57 @@ namespace BC
             return result;
         }
 
+        #pragma endregion
+
+        // ----------------------------
+        //       Scene Manager
+        // ----------------------------
+
+        #pragma region Scene Manager
+
+        void LoadScene(const std::string& scene_name, bool additive = false);
+        void LoadSceneAsync(const std::string& scene_name, bool additive = false);
+        
+        void LoadScene(GUID scene_guid, bool additive = false, const std::filesystem::path& project_directory = "");
+        void LoadSceneAsync(GUID scene_guid, bool additive = false, const std::filesystem::path& project_directory = "");
+
+        void AddSceneTemplate(std::shared_ptr<Scene> scene);
+        void AddSceneTemplate(GUID scene_id, const std::filesystem::path& scene_file_path);
+
+        void Serialise(YAML::Emitter& out);
+        void Deserialise(const YAML::Node& data, const std::filesystem::path& project_directory);
+
+        void SaveAllScenes();
+
+        #pragma endregion
+
     private:
 
         bool m_IsRunning = false;
         bool m_IsSimulating = false;
         bool m_IsPaused = false;
 
-        bool m_PhysicsSimulating = false;
+        // TODO: Make Scene Manager Hold "Unloaded Scenes" and when Loaded, it
+        // will deserialise from file, Unloaded scenes will just be relative
+        // file paths to scene file in project/scenes
 
-        std::vector<std::shared_ptr<Scene>> m_ActiveScenes = {};
+        /// @brief This holds instances of scenes that are currently simulating/running
+        std::unordered_map<GUID, std::shared_ptr<Scene>> m_SceneInstances = {};
 
+        /// @brief This holds relative paths to all scenes in Project/Scenes folder
+        std::unordered_map<GUID, std::filesystem::path> m_SceneFilePaths = {};
+
+        /// @brief This is the Scene ID of the Scene that will be instantiated on start
+        GUID m_EntryScene = NULL_GUID;
+
+        /// @brief To be initialised when SceneManager runtime starts
+        std::shared_ptr<Scene> m_PersistentScene = nullptr;
+
+        /// @brief To be initialised when SceneManager simulation/runtime starts
         std::unique_ptr<PhysicsSystem> m_PhysicsSystem = nullptr;
+
+        friend class Scene;
+        friend class Project;
 
     };
     

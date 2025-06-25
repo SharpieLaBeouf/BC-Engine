@@ -37,7 +37,7 @@ namespace BC
         SphereLightComponent& operator=(const SphereLightComponent& other);
         SphereLightComponent& operator=(SphereLightComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::SphereLightComponent; }
+        ComponentType GetType() const override { return ComponentType::SphereLightComponent; }
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
@@ -79,7 +79,7 @@ namespace BC
         ConeLightComponent& operator=(const ConeLightComponent& other);
         ConeLightComponent& operator=(ConeLightComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::ConeLightComponent; }
+        ComponentType GetType() const override { return ComponentType::ConeLightComponent; }
         
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
@@ -124,7 +124,7 @@ namespace BC
         DirectionalLightComponent& operator=(const DirectionalLightComponent& other);
         DirectionalLightComponent& operator=(DirectionalLightComponent&& other) noexcept;
 
-        ComponentType GetType() override { return ComponentType::DirectionalLightComponent; }
+        ComponentType GetType() const override { return ComponentType::DirectionalLightComponent; }
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;

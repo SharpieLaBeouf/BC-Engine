@@ -3,6 +3,8 @@
 
 #include "Asset/AssetManagerAPI.h"
 
+#include <yaml-cpp/yaml.h>
+
 namespace BC
 {
 
@@ -10,7 +12,7 @@ namespace BC
     {
         // TODO: Implement -> Create Runtime Render Target Asset
 
-        AssetHandle render_target_handle = Util::HashStringInsensitive("RT_ASSET_CAM_TAR - " + std::to_string(m_EntityID));
+        AssetHandle render_target_handle = Util::HashStringInsensitive("RT_ASSET_CAM_TAR - " + std::to_string(GetEntity().GetGUID()));
 
         return false;
     }
@@ -19,7 +21,7 @@ namespace BC
     {
         // TODO: Implement -> Create Runtime Render Target Asset
 
-        AssetHandle render_target_handle = Util::HashStringInsensitive("RT_ASSET_CAM_TAR - " + std::to_string(m_EntityID));
+        AssetHandle render_target_handle = Util::HashStringInsensitive("RT_ASSET_CAM_TAR - " + std::to_string(GetEntity().GetGUID()));
         AssetManager::RemoveRuntimeAsset(render_target_handle);
         
         return false;
@@ -39,7 +41,7 @@ namespace BC
 
     CameraComponent::CameraComponent(CameraComponent&& other) noexcept
     {
-        m_EntityID          = other.m_EntityID;             other.m_EntityID = NULL_GUID;
+		m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
         m_Instance          = std::move(other.m_Instance);  other.m_Instance.reset();
         m_ClearType         = other.m_ClearType;            other.m_ClearType       = CameraClearType_Colour;
@@ -73,7 +75,7 @@ namespace BC
         if (this == &other)
             return *this;
 
-        m_EntityID          = other.m_EntityID;             other.m_EntityID = NULL_GUID;
+		m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
         m_Instance          = std::move(other.m_Instance);  other.m_Instance.reset();
         m_ClearType         = other.m_ClearType;            other.m_ClearType       = CameraClearType_Colour;
@@ -94,7 +96,12 @@ namespace BC
     
     void CameraComponent::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool CameraComponent::SceneDeserialise(const YAML::Node& data)

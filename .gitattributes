@@ -1,3 +1,5 @@
 External/bin/** filter=lfs diff=lfs merge=lfs -text
 BC-Editor/Resources/Compiler/linux/clang++ filter=lfs diff=lfs merge=lfs -text
 BC-Editor/Resources/Compiler/windows/clang++.exe filter=lfs diff=lfs merge=lfs -text
+BC-Core/libclang.dll filter=lfs diff=lfs merge=lfs -text
+BC-Core/libclang.so.18.1 filter=lfs diff=lfs merge=lfs -text

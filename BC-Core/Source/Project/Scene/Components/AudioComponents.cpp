@@ -1,6 +1,8 @@
 #include "BC_PCH.h"
 #include "AudioComponents.h"
 
+#include <yaml-cpp/yaml.h>
+
 // TODO: Implement
 
 namespace BC
@@ -15,6 +17,7 @@ namespace BC
 
     AudioListenerComponent::AudioListenerComponent(AudioListenerComponent&& other) noexcept
     {
+		m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
     }
 
@@ -31,12 +34,19 @@ namespace BC
         if (this == &other)
             return *this;
 
+		m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
+
         return *this;
     }
 
     void AudioListenerComponent::SceneSerialise(YAML::Emitter& out) const
     {
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
 
+        }
+		out << YAML::EndMap;
     }
 
     bool AudioListenerComponent::SceneDeserialise(const YAML::Node& data)
@@ -55,6 +65,7 @@ namespace BC
 
     AudioEmitterComponent::AudioEmitterComponent(AudioEmitterComponent&& other) noexcept
     {
+		m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
     }
 
@@ -70,13 +81,20 @@ namespace BC
     {
         if (this == &other)
             return *this;
+            
+		m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
 
         return *this;
     }
 
     void AudioEmitterComponent::SceneSerialise(YAML::Emitter& out) const
     {
-
+        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
+		out << YAML::BeginMap;
+		{
+            
+        }
+		out << YAML::EndMap;
     }
 
     bool AudioEmitterComponent::SceneDeserialise(const YAML::Node& data)

@@ -26,6 +26,11 @@ namespace BC
 		static bool IsExtensionSupported(const std::filesystem::path& extension);
 		static bool IsAssetTypeComposite(const AssetType& asset_type);
 
+		static bool IsAssetLoaded(AssetHandle handle)
+		{
+			return Application::GetProject()->GetAssetManager()->IsAssetLoaded(handle);
+		}
+
         template <typename T>
         static std::shared_ptr<T> GetAsset(AssetHandle asset_handle)
         {
