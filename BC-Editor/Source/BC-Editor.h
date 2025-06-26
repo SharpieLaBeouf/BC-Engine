@@ -81,6 +81,7 @@ namespace BC
         std::shared_ptr<Texture2D> m_SimButton = nullptr;
         std::shared_ptr<Texture2D> m_StepButton = nullptr;
 
+    public:
 
         template<typename TPanelType>
         TPanelType* GetPanel()

@@ -45,6 +45,7 @@ namespace BC
             std::vector<SceneSnapshot> frames_in_flight;
 
             // Global 
+            glm::uvec2 screen_space_size = { 1, 1};
 
             // CubeMapArray -> MAX_SPHERE_SHADOW_MAPS
             AssetHandle sphere_shadow_map_array; 
@@ -66,6 +67,9 @@ namespace BC
         static void RecordDepthPrepass      (CameraEnvironment& camera_env);
         static void RecordComputeCulling    (CameraEnvironment& camera_env);
         static void RecordColourPass        (CameraEnvironment& camera_env);
+
+        static void ResizeScreenSpace(uint32_t width, uint32_t height);
+        static const glm::uvec2& GetScreenSpace();
 
 
         static void SubmitCommandBuffers(uint32_t frame_index);

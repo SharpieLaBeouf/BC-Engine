@@ -142,6 +142,24 @@ namespace BC
             s_Data = nullptr;
         }
 	}
+    
+    void SceneRenderer::ResizeScreenSpace(uint32_t width, uint32_t height)
+    {
+        if (!s_Data)
+            return;
+        
+        s_Data->screen_space_size = { width, height };
+    }
+
+    const glm::uvec2& SceneRenderer::GetScreenSpace()
+    {
+        if (!s_Data)
+        {
+            static glm::uvec2 s_NullSize = { 1, 1 };
+            return s_NullSize;
+        }
+        return s_Data->screen_space_size;
+    }
 
     void SceneRenderer::SnapshotScene(uint32_t frame_index, const std::vector<CameraContext>& camera_overrides)
     {

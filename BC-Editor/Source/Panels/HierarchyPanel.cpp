@@ -1,6 +1,8 @@
 #include "BC_PCH.h"
 #include "HierarchyPanel.h"
 
+#include "BC-Editor.h"
+
 namespace BC
 {
     void HierarchyPanel::OnRenderGUI()
@@ -21,7 +23,9 @@ namespace BC
                         {
                             if (auto scene = Application::GetProject()->GetSceneManager()->GetActiveScene(); scene)
                             {
-                                this->m_Selection.SetSelection(scene->CreateEntity("Empty Entity"));
+                                Entity entity = scene->CreateEntity("Empty Entity");
+                                this->m_Selection.SetSelection(entity);
+                                this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                             }
                         });
                     }
@@ -38,6 +42,7 @@ namespace BC
                                     entity.AddComponent<MeshRendererComponent>();
                                     // TODO: Add Reference
                                     this->m_Selection.SetSelection(entity);
+                                    this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                                 }
                             });
                         }
@@ -52,6 +57,7 @@ namespace BC
                                     entity.AddComponent<MeshRendererComponent>();
                                     // TODO: Add Reference
                                     this->m_Selection.SetSelection(entity);
+                                    this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                                 }
                             });
                         }
@@ -66,6 +72,7 @@ namespace BC
                                     entity.AddComponent<MeshRendererComponent>();
                                     // TODO: Add Reference
                                     this->m_Selection.SetSelection(entity);
+                                    this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                                 }
                             });
                         }
@@ -80,6 +87,7 @@ namespace BC
                                     entity.AddComponent<MeshRendererComponent>();
                                     // TODO: Add Reference
                                     this->m_Selection.SetSelection(entity);
+                                    this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                                 }
                             });
                         }
@@ -94,6 +102,7 @@ namespace BC
                                     entity.AddComponent<MeshRendererComponent>();
                                     // TODO: Add Reference
                                     this->m_Selection.SetSelection(entity);
+                                    this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                                 }
                             });
                         }
@@ -112,6 +121,7 @@ namespace BC
                                     Entity entity = scene->CreateEntity("Sphere Light");
                                     entity.AddComponent<SphereLightComponent>();
                                     this->m_Selection.SetSelection(entity);
+                                    this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                                 }
                             });
                         }
@@ -125,6 +135,7 @@ namespace BC
                                     Entity entity = scene->CreateEntity("Cone Light");
                                     entity.AddComponent<ConeLightComponent>();
                                     this->m_Selection.SetSelection(entity);
+                                    this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                                 }
                             });
                         }
@@ -138,6 +149,7 @@ namespace BC
                                     Entity entity = scene->CreateEntity("Directional Light");
                                     entity.AddComponent<DirectionalLightComponent>();
                                     this->m_Selection.SetSelection(entity);
+                                    this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                                 }
                             });
                         }
@@ -365,6 +377,7 @@ namespace BC
 					{
                         Entity entity = scene_ref->CreateEntity("Empty Entity", current_entity.GetGUID());
                         this->m_Selection.SetSelection(entity);
+                        this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
 					}
 				});
 			}
@@ -381,6 +394,7 @@ namespace BC
                             entity.AddComponent<MeshRendererComponent>();
                             // TODO: Add Cube Reference
                             this->m_Selection.SetSelection(entity);
+                            this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                         }
                     });
                 }
@@ -395,6 +409,7 @@ namespace BC
                             entity.AddComponent<MeshRendererComponent>();
                             // TODO: Add Sphere Reference
                             this->m_Selection.SetSelection(entity);
+                            this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                         }
                     });
                 }
@@ -409,6 +424,7 @@ namespace BC
                             entity.AddComponent<MeshRendererComponent>();
                             // TODO: Add Plane Reference
                             this->m_Selection.SetSelection(entity);
+                            this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                         }
                     });
                 }
@@ -423,6 +439,7 @@ namespace BC
                             entity.AddComponent<MeshRendererComponent>();
                             // TODO: Add Capsule Reference
                             this->m_Selection.SetSelection(entity);
+                            this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                         }
                     });
                 }
@@ -437,6 +454,7 @@ namespace BC
                             entity.AddComponent<MeshRendererComponent>();
                             // TODO: Add Suzanne Reference
                             this->m_Selection.SetSelection(entity);
+                            this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                         }
                     });
                 }
@@ -455,6 +473,7 @@ namespace BC
                             Entity entity = scene_ref->CreateEntity("Sphere Light", current_entity.GetGUID());
                             entity.AddComponent<SphereLightComponent>();
                             this->m_Selection.SetSelection(entity);
+                            this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                         }
                     });
                 }
@@ -468,6 +487,7 @@ namespace BC
                             Entity entity = scene_ref->CreateEntity("Cone Light", current_entity.GetGUID());
                             entity.AddComponent<ConeLightComponent>();
                             this->m_Selection.SetSelection(entity);
+                            this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                         }
                     });
                 }
@@ -481,6 +501,7 @@ namespace BC
                             Entity entity = scene_ref->CreateEntity("Directional Light", current_entity.GetGUID());
                             entity.AddComponent<DirectionalLightComponent>();
                             this->m_Selection.SetSelection(entity);
+                            this->m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(entity);
                         }
                     });
                 }
@@ -532,7 +553,10 @@ namespace BC
             ImVec2 label_max(item_max.x, item_max.y);
 
             if (ImGui::IsMouseHoveringRect(label_min, label_max) && ImGui::IsMouseClicked(0))
+            {
                 m_Selection.SetSelection(current_entity);
+                m_EditorLayer->GetPanel<InspectorPanel>()->SetContextEntity(current_entity);
+            }
         }
 
         ImGui::PopID();

@@ -383,7 +383,7 @@ namespace BC
 
         // 2. Update Static Scene Renderer for any Vulkan resources relying on
         //    screen space dimensions 
-        // SceneRenderer::ResizeScreenSpace(width, height);
+        SceneRenderer::ResizeScreenSpace(width, height);
 
         // 3. Update Vulkan Core with Screen Space
         m_VulkanCore->ResizeScreenSpace(width, height);
