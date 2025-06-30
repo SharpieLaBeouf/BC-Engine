@@ -78,7 +78,7 @@ namespace BC
 		return s_Instance->m_FixedDeltaTime * s_Instance->m_TimeScale; 
 	}
 
-	void Time::SetFixedDeltaTime(const float& fixedDeltaTime) 
+	void Time::SetFixedDeltaTime(float fixedDeltaTime) 
 	{
 		BC_ASSERT(s_Instance, "Time::SetFixedDeltaTime: Time Not Initialised!");
         if (!s_Instance)
@@ -115,7 +115,7 @@ namespace BC
 		return s_Instance->m_TimeScale; 
 	}
 
-	void Time::SetTimeScale(const float& timeScale)
+	void Time::SetTimeScale(float timeScale)
 	{
 		BC_ASSERT(s_Instance, "Time::SetTimeScale: Time Not Initialised!");
         if (!s_Instance)

@@ -4,6 +4,7 @@
 
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 namespace BC
 {
@@ -15,6 +16,9 @@ namespace BC
 	public:
 
 		virtual ~AssetManagerBase() = default;
+
+		const AssetMetaData& GetMetaData(AssetHandle handle);
+        const AssetMetaData& GetMetaData(const std::filesystem::path& asset_path);
     
 		virtual std::shared_ptr<Asset> GetAsset(const AssetHandle& handle) = 0;
 		virtual std::shared_ptr<Shader> GetInbuiltShader(const std::string& default_shader_name, bool is_compute = false) = 0;
@@ -27,6 +31,10 @@ namespace BC
 		virtual void RemoveRuntimeAsset(AssetHandle asset_handle) = 0;
 
 		virtual void ClearRuntimeAssets() = 0;
+
+	protected:
+
+		std::unordered_map<AssetHandle, AssetMetaData> m_MetaDataRegistry = {};
 
     };
 

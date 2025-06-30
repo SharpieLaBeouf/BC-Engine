@@ -135,14 +135,34 @@ namespace BC
 		
 		m_SceneState = SceneState_Edit;
 
-		if (!additive)
-			OnStopScene();
-
 		project->GetSceneManager()->LoadSceneAsyncNoAdd(std::filesystem::relative(in_filepath, project->GetDirectory() / "Scenes"), additive);
     }
 
-    void EditorLayer::OnStopScene()
+    void EditorLayer::OnStartRuntime()
     {
+		m_CachedSceneManager = std::make_unique<SceneManager>(*Application::GetProject()->GetSceneManager());
+
+		Application::GetProject()->GetSceneManager()->OnStartRuntime();
+    }
+
+    void EditorLayer::OnStartSimulation()
+    {
+		m_CachedSceneManager = std::make_unique<SceneManager>(*Application::GetProject()->GetSceneManager());
+
+		Application::GetProject()->GetSceneManager()->OnStartSimulation();
+    }
+
+    void EditorLayer::OnStep()
+    {
+    }
+
+    void EditorLayer::OnStopSceneManager()
+    {
+		BC_THROW(m_CachedSceneManager, "EditorLayer::OnStopSceneManager: No Cached of SceneManager.");
+
+		Application::GetProject()->SetSceneManager(std::move(m_CachedSceneManager));
+		m_CachedSceneManager.reset();
+		m_CachedSceneManager = nullptr;
     }
 
     void EditorLayer::DrawTopBar()
@@ -344,16 +364,19 @@ namespace BC
 					case SceneState_Edit:
 					{
 						m_SceneState = SceneState_Play;
+						OnStartRuntime();
 						break;
 					}
 					case SceneState_Play:
 					{
 						m_SceneState = SceneState_Edit;
+						OnStopSceneManager();
 						break;
 					}
 					case SceneState_Sim:
 					{
 						m_SceneState = SceneState_Edit;
+						OnStopSceneManager();
 						break;
 					}
 				}
@@ -367,13 +390,14 @@ namespace BC
 					case SceneState_Edit:
 					{
 						m_SceneState = SceneState_Sim;
+						OnStartSimulation();
 						break;
 					}
 					case SceneState_Play:
 					case SceneState_Sim:
 					{
 						// Step Button
-						
+						OnStep();
 						break;
 					}
 				}				

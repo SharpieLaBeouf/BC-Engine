@@ -1,4 +1,5 @@
 #include "BC_PCH.h"
+
 #include "PhysicsComponents.h"
 
 #include <yaml-cpp/yaml.h>
@@ -18,7 +19,6 @@ namespace BC
     RigidbodyComponent::RigidbodyComponent(RigidbodyComponent&& other) noexcept
     {
 		m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
-
         m_Rigid = std::move(other.m_Rigid); other.m_Rigid = {};
     }
 
@@ -38,7 +38,6 @@ namespace BC
             return *this;
 
         m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
-
         m_Rigid = std::move(other.m_Rigid); other.m_Rigid = {};
 
         return *this;
@@ -46,11 +45,20 @@ namespace BC
     
     bool RigidbodyComponent::Init()
     {
-        return false;
+        auto physics_system = Application::GetProject()->GetSceneManager()->GetPhysicsSystem();
+
+        if (!physics_system)
+            return false;
+
+        m_Rigid.Init(GetEntity());
+        physics_system->RegisterRigid(GetEntity(), m_Rigid.GetHandle());
+
+        return true;
     }
 
     bool RigidbodyComponent::Shutdown()
     {
+        m_Rigid.Shutdown();
         return false;
     }
 
@@ -71,64 +79,6 @@ namespace BC
 
 #pragma endregion
     
-#pragma region PlaneCollider
-    
-    PlaneCollider::PlaneCollider(const PlaneCollider& other)
-    {
-
-    }
-
-    PlaneCollider::PlaneCollider(PlaneCollider&& other) noexcept
-    {
-        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
-
-    }
-
-    PlaneCollider& PlaneCollider::operator=(const PlaneCollider& other)
-    {
-        if (this == &other)
-            return *this;
-
-        return *this;
-    }
-
-    PlaneCollider& PlaneCollider::operator=(PlaneCollider&& other) noexcept
-    {
-        if (this == &other)
-            return *this;
-
-        m_Entity = std::move(other.m_Entity); other.m_Entity = nullptr;
-
-        return *this;
-    }
-    
-    bool PlaneCollider::Init()
-    {
-        return false;
-    }
-
-    bool PlaneCollider::Shutdown()
-    {
-        return false;
-    }
-
-    void PlaneCollider::SceneSerialise(YAML::Emitter& out) const
-    {
-        out << YAML::Key << Util::ComponentTypeToString(GetType()) << YAML::Value;
-		out << YAML::BeginMap;
-		{
-            
-        }
-		out << YAML::EndMap;
-    }
-
-    bool PlaneCollider::SceneDeserialise(const YAML::Node& data)
-    {
-        return false;
-    }
-
-#pragma endregion
-
 #pragma region BoxColliderComponent
     
     BoxColliderComponent::BoxColliderComponent(const BoxColliderComponent& other)
@@ -163,12 +113,25 @@ namespace BC
     
     bool BoxColliderComponent::Init()
     {
-        return false;
+        auto physics_system = Application::GetProject()->GetSceneManager()->GetPhysicsSystem();
+
+        if (!physics_system)
+            return false;
+        
+        Entity entity = GetEntity();
+        
+        m_Shape.Init(entity);
+        physics_system->RegisterShape(GetEntity(), m_Shape.GetHandle(), ShapeType_Box);
+        physics_system->MarkEntityLocalShapeTransformDirty(entity);
+        physics_system->MarkEntityShapeScaleChanged(entity);
+
+        return true;
     }
 
     bool BoxColliderComponent::Shutdown()
     {
-        return false;
+        m_Shape.Shutdown();
+        return true;
     }
 
     void BoxColliderComponent::SceneSerialise(YAML::Emitter& out) const
@@ -221,12 +184,25 @@ namespace BC
     
     bool SphereColliderComponent::Init()
     {
-        return false;
+        auto physics_system = Application::GetProject()->GetSceneManager()->GetPhysicsSystem();
+
+        if (!physics_system)
+            return false;
+        
+        Entity entity = GetEntity();
+        
+        m_Shape.Init(entity);
+        physics_system->RegisterShape(GetEntity(), m_Shape.GetHandle(), ShapeType_Sphere);
+        physics_system->MarkEntityLocalShapeTransformDirty(entity);
+        physics_system->MarkEntityShapeScaleChanged(entity);
+
+        return true;
     }
 
     bool SphereColliderComponent::Shutdown()
     {
-        return false;
+        m_Shape.Shutdown();
+        return true;
     }
 
     void SphereColliderComponent::SceneSerialise(YAML::Emitter& out) const
@@ -279,12 +255,25 @@ namespace BC
     
     bool CapsuleColliderComponent::Init()
     {
-        return false;
+        auto physics_system = Application::GetProject()->GetSceneManager()->GetPhysicsSystem();
+
+        if (!physics_system)
+            return false;
+
+        Entity entity = GetEntity();
+        
+        m_Shape.Init(entity);
+        physics_system->RegisterShape(entity, m_Shape.GetHandle(), ShapeType_Capsule);
+        physics_system->MarkEntityLocalShapeTransformDirty(entity);
+        physics_system->MarkEntityShapeScaleChanged(entity);
+
+        return true;
     }
 
     bool CapsuleColliderComponent::Shutdown()
     {
-        return false;
+        m_Shape.Shutdown();
+        return true;
     }
 
     void CapsuleColliderComponent::SceneSerialise(YAML::Emitter& out) const

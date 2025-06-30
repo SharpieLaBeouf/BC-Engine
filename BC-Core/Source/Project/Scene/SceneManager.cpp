@@ -33,6 +33,13 @@ namespace BC
 
     SceneManager::~SceneManager()
     {
+        if (m_IsRunning)
+            OnStopRuntime();
+
+        if (m_IsSimulating)
+            OnStopSimulation();
+
+        OnStopPhysics();
     }
 
     Entity SceneManager::GetEntity(GUID entity_guid) const
@@ -190,41 +197,38 @@ namespace BC
 
         std::unordered_set<Entity> physics_entities = {};
 
-        for (auto&& e : GetAllEntitiesWithComponent<RigidbodyComponent>()) physics_entities.insert(e);
-        for (auto&& e : GetAllEntitiesWithComponent<PlaneCollider>()) physics_entities.insert(e);
-        for (auto&& e : GetAllEntitiesWithComponent<BoxColliderComponent>()) physics_entities.insert(e);
-        for (auto&& e : GetAllEntitiesWithComponent<SphereColliderComponent>()) physics_entities.insert(e);
-        for (auto&& e : GetAllEntitiesWithComponent<CapsuleColliderComponent>()) physics_entities.insert(e);
-        for (auto&& e : GetAllEntitiesWithComponent<ConvexMeshColliderComponent>()) physics_entities.insert(e);
-        for (auto&& e : GetAllEntitiesWithComponent<HeightFieldColliderComponent>()) physics_entities.insert(e);
-        for (auto&& e : GetAllEntitiesWithComponent<TriangleMeshColliderComponent>()) physics_entities.insert(e);
+        for (auto&& e : GetAllEntitiesWithComponent<RigidbodyComponent>())                  physics_entities.insert(e);
+        for (auto&& e : GetAllEntitiesWithComponent<BoxColliderComponent>())                physics_entities.insert(e);
+        for (auto&& e : GetAllEntitiesWithComponent<SphereColliderComponent>())             physics_entities.insert(e);
+        for (auto&& e : GetAllEntitiesWithComponent<CapsuleColliderComponent>())            physics_entities.insert(e);
+        for (auto&& e : GetAllEntitiesWithComponent<ConvexMeshColliderComponent>())         physics_entities.insert(e);
+        for (auto&& e : GetAllEntitiesWithComponent<HeightFieldColliderComponent>())        physics_entities.insert(e);
+        for (auto&& e : GetAllEntitiesWithComponent<TriangleMeshColliderComponent>())       physics_entities.insert(e);
 
-		for (const auto& entity : physics_entities) 
+		for (const auto& entity : physics_entities)
         {
-			if (entity.HasComponent<RigidbodyComponent>())
-				entity.GetComponent<RigidbodyComponent>().Init();
+			if (auto component = entity.TryGetComponent<RigidbodyComponent>(); component)
+				component->Init();
 
-			if (entity.HasComponent<PlaneCollider>())
-				entity.GetComponent<PlaneCollider>().Init();
+			if (auto component = entity.TryGetComponent<BoxColliderComponent>(); component)
+				component->Init();
 
-			if (entity.HasComponent<BoxColliderComponent>())
-				entity.GetComponent<BoxColliderComponent>().Init();
+			if (auto component = entity.TryGetComponent<SphereColliderComponent>(); component)
+				component->Init();
 
-			if (entity.HasComponent<SphereColliderComponent>())
-				entity.GetComponent<SphereColliderComponent>().Init();
+			if (auto component = entity.TryGetComponent<CapsuleColliderComponent>(); component)
+				component->Init();
 
-			if (entity.HasComponent<CapsuleColliderComponent>())
-				entity.GetComponent<CapsuleColliderComponent>().Init();
+			if (auto component = entity.TryGetComponent<ConvexMeshColliderComponent>(); component)
+				component->Init();
 
-			if (entity.HasComponent<ConvexMeshColliderComponent>())
-				entity.GetComponent<ConvexMeshColliderComponent>().Init();
+			if (auto component = entity.TryGetComponent<HeightFieldColliderComponent>(); component)
+				component->Init();
 
-			if (entity.HasComponent<HeightFieldColliderComponent>())
-				entity.GetComponent<HeightFieldColliderComponent>().Init();
-
-			if (entity.HasComponent<TriangleMeshColliderComponent>())
-				entity.GetComponent<TriangleMeshColliderComponent>().Init();
+			if (auto component = entity.TryGetComponent<TriangleMeshColliderComponent>(); component)
+				component->Init();
 		}
+        m_PhysicsSystem->OnUpdate();
     }
 
     void SceneManager::OnStopPhysics()
@@ -232,7 +236,6 @@ namespace BC
         std::unordered_set<Entity> physics_entities = {};
 
         for (auto&& e : GetAllEntitiesWithComponent<RigidbodyComponent>())              physics_entities.insert(e);
-        for (auto&& e : GetAllEntitiesWithComponent<PlaneCollider>())                   physics_entities.insert(e);
         for (auto&& e : GetAllEntitiesWithComponent<BoxColliderComponent>())            physics_entities.insert(e);
         for (auto&& e : GetAllEntitiesWithComponent<SphereColliderComponent>())         physics_entities.insert(e);
         for (auto&& e : GetAllEntitiesWithComponent<CapsuleColliderComponent>())        physics_entities.insert(e);
@@ -244,9 +247,6 @@ namespace BC
         {
 			if (entity.HasComponent<RigidbodyComponent>())
 				entity.GetComponent<RigidbodyComponent>().Shutdown();
-
-			if (entity.HasComponent<PlaneCollider>())
-				entity.GetComponent<PlaneCollider>().Shutdown();
 
 			if (entity.HasComponent<BoxColliderComponent>())
 				entity.GetComponent<BoxColliderComponent>().Shutdown();
@@ -267,25 +267,42 @@ namespace BC
 				entity.GetComponent<TriangleMeshColliderComponent>().Shutdown(); 
 		}
 
-        m_PhysicsSystem->Shutdown();
-        m_PhysicsSystem.reset();
-        m_PhysicsSystem = nullptr;
+        if (m_PhysicsSystem)
+        {
+            m_PhysicsSystem->Shutdown();
+            m_PhysicsSystem.reset();
+            m_PhysicsSystem = nullptr;
+        }
     }
 
     void SceneManager::OnUpdate()
     {
         BC_PROFILE_SCOPE("SceneManager::OnUpdate: On Update Loop");
 
+        if (m_IsPaused)
+            return;
+
+        if (!m_IsRunning && !m_IsSimulating)
+            return;
+
         for(auto [scene_id, scene] : m_SceneInstances)
         {
             if (!scene) continue;
             scene->OnUpdate();
         }
+
+        m_PhysicsSystem->OnUpdate();
     }
 
     void SceneManager::OnFixedUpdate()
     {
         BC_PROFILE_SCOPE_ACCUMULATIVE("SceneManager::OnFixedUpdate: On Fixed Update Loop");
+
+        if (m_IsPaused)
+            return;
+
+        if (!m_IsRunning && !m_IsSimulating)
+            return;
 
         for(auto [scene_id, scene] : m_SceneInstances)
         {
@@ -294,12 +311,18 @@ namespace BC
         }
 
         if (m_PhysicsSystem)
-            m_PhysicsSystem->OnUpdate();
+            m_PhysicsSystem->OnSimulate();
     }
 
     void SceneManager::OnLateUpdate()
     {
         BC_PROFILE_SCOPE("SceneManager::OnLateUpdate: On Late Update Loop");
+
+        if (m_IsPaused)
+            return;
+
+        if (!m_IsRunning && !m_IsSimulating)
+            return;
 
         for(auto [scene_id, scene] : m_SceneInstances)
         {
@@ -620,4 +643,5 @@ namespace BC
             scene->SaveScene();
         }
     }
+
 }

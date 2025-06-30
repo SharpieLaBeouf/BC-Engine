@@ -186,7 +186,7 @@ namespace BC
                 {
                     if (ImGui::BeginDragDropTarget())
                     {
-                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_HANDLE"))
                         {
                             // TODO: Check if Entity's Scenes Are the Same -> IF NOT WE NEED TO MOVE ONE ENTITY FROM ONE SCENE TO THE OTHER, THEN PARENT FROM
                             Entity dropped_entity = *(Entity*)payload->Data;
@@ -206,6 +206,11 @@ namespace BC
                     }
                 }
             }
+            else
+            {
+                ImGui::PopStyleVar();
+            }
+            
             ImGui::End();
         }
     }
@@ -257,7 +262,7 @@ namespace BC
         {
             if (ImGui::BeginDragDropTarget())
             {                
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_HANDLE"))
                 {
                     Entity dropped_entity = *(Entity*)payload->Data;
 
@@ -331,13 +336,13 @@ namespace BC
             m_DraggingSourceMin = min;
             m_DraggingSourceMax = max;
 
-            ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &current_entity, sizeof(Entity));
+            ImGui::SetDragDropPayload("ENTITY_HANDLE", &current_entity, sizeof(Entity));
             ImGui::EndDragDropSource();
         }
 
         if (ImGui::BeginDragDropTarget())
         {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_HANDLE"))
             {
                 Entity dropped_entity = *(Entity*)payload->Data;
 

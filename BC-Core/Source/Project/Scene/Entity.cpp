@@ -50,6 +50,8 @@ namespace BC
         {
             return;
         }
+
+        GetComponent<T>().Shutdown();
         
         // Ensure the Octree Job Does Not Access Component After Removed
         if constexpr (std::is_same_v<T, MeshRendererComponent> || std::is_same_v<T, SkinnedMeshRendererComponent>)
@@ -84,6 +86,18 @@ namespace BC
         }
 
         return m_Scene->m_Registry.get<T>(m_EntityHandle);
+    }
+
+    template<typename T>
+    T* Entity::TryGetComponent() const
+    {
+        if (m_EntityHandle == entt::null) 
+        {
+            BC_CORE_ERROR("Entity::TryGetComponent<{}>: Cannot Get Component as Entity Handle is Null.", typeid(T).name());
+            return nullptr;
+        }
+
+        return m_Scene->m_Registry.try_get<T>(m_EntityHandle);
     }
         
     template<typename T>
@@ -257,6 +271,7 @@ namespace BC
     template T& Entity::AddComponent<T>(); \
     template void Entity::RemoveComponent<T>(); \
     template T& Entity::GetComponent<T>() const; \
+    template T* Entity::TryGetComponent<T>() const; \
     template T& Entity::GetComponentInParent<T>() const; \
     template T& Entity::GetComponentInChild<T>() const; \
     template std::vector<Entity> Entity::GetComponentsInParents<T>() const; \

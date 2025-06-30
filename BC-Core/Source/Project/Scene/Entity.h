@@ -57,6 +57,9 @@ namespace BC
 
 		template<typename T>
 		T& GetComponent() const;
+
+		template<typename T>
+		T* TryGetComponent() const;
         
 		template<typename T>
 		T& GetComponentInParent() const;

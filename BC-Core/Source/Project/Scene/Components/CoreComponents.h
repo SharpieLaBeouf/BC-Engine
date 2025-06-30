@@ -46,8 +46,8 @@ namespace BC
         
     #pragma region General Methods
 
-        void UpdateLocalMatrix();
-        void OnTransformUpdated();
+        void UpdateLocalMatrix(bool scale_updated = false);
+        void OnTransformUpdated(bool scale_updated = false);
 
     #pragma endregion
 
@@ -206,13 +206,101 @@ namespace BC
         const std::vector<GUID>& GetChildrenGUID() const { return m_Children; }
         
         // --- Scripts ---
-        void AddScript(const std::string& script_name, bool active_state = true) { m_Scripts[script_name] = active_state; }
-        void RemoveScript(const std::string& script_name) { if (m_Scripts.contains(script_name)) { m_Scripts.erase(script_name); } }
-        void UpdateScriptActiveState(const std::string& script_name, bool active_state) { if (m_Scripts.contains(script_name)) { m_Scripts[script_name] = active_state; } }
+
+        /// @brief Will add a script of type to Scripts
+        void AddScript(const std::string& script_name, bool active_state = true)
+        {
+            m_Scripts.emplace_back(script_name, active_state);
+        }
+
+        /// @brief Will Remove First Script Found With Name
+        void RemoveScript(const std::string& script_name) 
+        {
+            auto it = std::find_if(m_Scripts.begin(), m_Scripts.end(), [&](const std::pair<std::string, bool>& pair)
+            {
+                return pair.first == script_name;
+            });
+
+            if (it != m_Scripts.end())
+                m_Scripts.erase(it);
+        }
+
+        /// @brief Remove script by index if in range
+        void RemoveScript(size_t index)
+        {
+            if (index >= m_Scripts.size() || index < 0)
+                return;
+
+            m_Scripts.erase(m_Scripts.begin() + index);
+        }
+
+        /// @brief Will Update Active State of First Script Found With Name
+        void UpdateScriptActiveState(const std::string& script_name, bool active_state)
+        {
+            auto it = std::find_if(m_Scripts.begin(), m_Scripts.end(), [&](const std::pair<std::string, bool>& pair)
+            {
+                return pair.first == script_name;
+            });
+
+            if (it != m_Scripts.end())
+                it->second = active_state;
+        }
+
+        /// @brief Update active state of script at index if in range
+        void UpdateScriptActiveState(size_t index, bool active_state)
+        {
+            if (index >= m_Scripts.size() || index < 0)
+                return;
+
+            m_Scripts[index].second = active_state;
+        }
+
+        /// @brief Update script name of script at index if in range
+        void UpdateScriptNameAtIndex(size_t index, const std::string& script_name)
+        {
+            if (index >= m_Scripts.size() || index < 0)
+                return;
+
+            m_Scripts[index].first = script_name;
+        }
         
+        /// @brief Will Get Active State of First Script Found With Name
+        bool GetScriptActive(const std::string& script_name) const
+        {
+            auto it = std::find_if(m_Scripts.begin(), m_Scripts.end(), [&](const std::pair<std::string, bool>& pair)
+            {
+                return pair.first == script_name;
+            });
+
+            if (it != m_Scripts.end())
+                return it->second;
+            
+            return false;
+        }
+
+        /// @brief Get active state of script at index if in range
+        bool GetScriptActive(size_t index) const
+        {
+            if (index >= m_Scripts.size() || index < 0)
+                return false;
+
+            return m_Scripts[index].second;
+        }
+
+        /// @brief Get script name at index if in range, otherwise returns empty string
+        const std::string& GetScriptNameAtIndex(size_t index) const
+        {
+            if (index >= m_Scripts.size() || index < 0)
+                return {};
+
+            return m_Scripts[index].first;
+        }
+
         bool HasScripts() const { return !m_Scripts.empty(); }
+
+        const std::vector<std::pair<std::string, bool>>& GetScripts() const { return m_Scripts; }
         
-        // --- Scripts ---
+        // --- Prefabs ---
 
         AssetHandle GetPrefabHandle() const { return m_PrefabSourceHandle; }
         void SetPrefabHandle(AssetHandle handle) { m_PrefabSourceHandle = handle; }
@@ -235,8 +323,8 @@ namespace BC
         /// @brief A vector of children GUID's attached to this entity
         std::vector<GUID> m_Children = {};
 
-        /// @brief A map of scripts attached to this entity and their active status. Key = script name, Value = active status
-        std::unordered_map<std::string, bool> m_Scripts = {};
+        /// @brief A vector of scripts attached to this entity and their active status. First = script name, Second = active status
+        std::vector<std::pair<std::string, bool>> m_Scripts = {};
 
         /// @brief This is the source asset handle of the prefab that this object is created from and linked to
         AssetHandle m_PrefabSourceHandle = NULL_GUID;

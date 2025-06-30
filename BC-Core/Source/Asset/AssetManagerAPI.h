@@ -22,6 +22,9 @@ namespace BC
 
     public:
 
+        static const AssetMetaData& GetMetaData(AssetHandle handle);
+        static const AssetMetaData& GetMetaData(const std::filesystem::path& asset_path);
+
 		static AssetType GetAssetTypeFromFileExtension(const std::filesystem::path& extension);
 		static bool IsExtensionSupported(const std::filesystem::path& extension);
 		static bool IsAssetTypeComposite(const AssetType& asset_type);

@@ -25,20 +25,21 @@ namespace BC
             {
                 if (ImGui::Begin(Util::PanelTypeToString(GetType()), &m_Active))
                 {
+                    ImGui::PushStyleColor(ImGuiCol_TabSelected, ImVec4(0.448f, 0.448f, 0.448f, 0.448f));
                     if (ImGui::BeginTabBar("ProfilerTabs"))
                     {
                         // --- Frame Profiler Tab ---
                         if (ImGui::BeginTabItem("Frame Profiler"))
                         {
                             static float timer = 1.0f;
-                            static bool IsResultsPerFrame = true;
+                            static bool result_per_frame = true;
                             static float fps = ImGui::GetIO().Framerate;
                             static std::map<std::string, BC::ProfileResult> results;
 
-                            if (timer > 0.0f && !IsResultsPerFrame)
+                            if (timer > 0.0f && !result_per_frame)
                                 timer -= BC::Time::GetDeltaTime();
 
-                            if (timer <= 0.0f || IsResultsPerFrame)
+                            if (timer <= 0.0f || result_per_frame)
                             {
                                 timer = 1.0f;
                                 results = BC::Profiler::Get().GetResults();
@@ -60,7 +61,7 @@ namespace BC
                             ImGui::Separator();
                             ImGui::Dummy({0.0f, 2.5f});
 
-                            ImGui::Checkbox("Toggle Results Per Frame/Per Second", &IsResultsPerFrame);
+                            ImGui::Checkbox("Toggle Results Per Frame/Per Second", &result_per_frame);
 
                             ImGui::EndTabItem();
                         }
@@ -90,6 +91,9 @@ namespace BC
                             if (ImGui::Button(profiling_is_paused ? "Resume" : "Pause"))
                                 profiling_is_paused = !profiling_is_paused;
 
+                            ImGui::SameLine();
+                            ImGui::Text("Frame Time: %.2fms", profile.frame_duration);
+                            
                             if (Input::GetKey(Key::F11))
                                 profiling_is_paused = true;
 
@@ -180,6 +184,7 @@ namespace BC
 
                         ImGui::EndTabBar();
                     }
+                    ImGui::PopStyleColor();
                 }
                 ImGui::End();
             }

@@ -12,7 +12,7 @@ namespace BC
             return;
 
         auto& material_handles = mesh_component.GetMaterialHandles();
-        auto static_mesh_asset = AssetManager::GetAsset<StaticMesh>(mesh_component.GetStaticMesh());
+        auto static_mesh_asset = AssetManager::GetAsset<StaticMesh>(mesh_component.GetMesh());
 
         if (!static_mesh_asset || material_handles.empty())
             return;
@@ -42,7 +42,7 @@ namespace BC
                     OpaqueMaterialGeometryMap[material_handles[i]].push_back({});
                     Util::GeometryData& data = OpaqueMaterialGeometryMap[material_handles[i]].back();
 
-                    data.static_mesh.static_mesh_asset_handle = mesh_component.GetStaticMesh();
+                    data.static_mesh.static_mesh_asset_handle = mesh_component.GetMesh();
                     data.static_mesh.sub_mesh_index = i;
                     data.static_mesh.geom_type = Util::GeometryType_Static;
                     data.static_mesh.casting_shadow = mesh_component.GetCastingShadows();
@@ -54,7 +54,7 @@ namespace BC
                     MixedMaterialGeometryMap[material_handles[i]].push_back({});
                     Util::GeometryData& data = MixedMaterialGeometryMap[material_handles[i]].back();
 
-                    data.static_mesh.static_mesh_asset_handle = mesh_component.GetStaticMesh();
+                    data.static_mesh.static_mesh_asset_handle = mesh_component.GetMesh();
                     data.static_mesh.sub_mesh_index = i;
                     data.static_mesh.geom_type = Util::GeometryType_Static;
                     data.static_mesh.casting_shadow = mesh_component.GetCastingShadows();
@@ -66,7 +66,7 @@ namespace BC
                     TransparentMaterialGeometryMap[material_handles[i]].push_back({});
                     Util::GeometryData& data = TransparentMaterialGeometryMap[material_handles[i]].back();
 
-                    data.static_mesh.static_mesh_asset_handle = mesh_component.GetStaticMesh();
+                    data.static_mesh.static_mesh_asset_handle = mesh_component.GetMesh();
                     data.static_mesh.sub_mesh_index = i;
                     data.static_mesh.geom_type = Util::GeometryType_Static;
                     data.static_mesh.casting_shadow = mesh_component.GetCastingShadows();

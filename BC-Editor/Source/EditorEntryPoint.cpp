@@ -48,6 +48,10 @@ namespace BC
             if (s_NewProjectCreated)
                 GetProject()->SaveProject(); // Save Newly Created Project After Application::m_Project has been set
 
+            
+			auto script_manager = std::make_unique<ScriptManager>(GetProject()->GetDirectory() / "Scripts/Bin/ScriptCode.dll");
+            SetScriptManager(std::move(script_manager));
+
             PushLayer(new EditorLayer());
         }
 

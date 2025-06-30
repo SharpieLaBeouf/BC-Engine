@@ -81,7 +81,7 @@ namespace BC
 
 #pragma region General Methods
 
-    void TransformComponent::UpdateLocalMatrix()
+    void TransformComponent::UpdateLocalMatrix(bool scale_updated)
     {
         if (CheckFlag(TransformFlag_PropertiesUpdated))
         {
@@ -99,24 +99,22 @@ namespace BC
                 return;
             }
 
-            // We do this as we don't want to trigger rigidbody changes in child
-            // entities, only this entity's rigidbody will be marked not to take
-            // on simulation changes.
-            auto project = Application::GetProject();
-            if (project)
+            if (auto project = Application::GetProject(); project && project->GetSceneManager()->GetPhysicsSystem())
             {
                 auto physics_system = project->GetSceneManager()->GetPhysicsSystem();
-                if (physics_system && entity.HasComponent<RigidbodyComponent>())
+                auto child_rigidbodies = GetComponentsInChildren<RigidbodyComponent>();
+                for (const auto& child_entity : child_rigidbodies)
                 {
-                    physics_system->MarkEntityTransformDirty(entity);
+                    physics_system->MarkEntityRigidbodyTransformDirty(child_entity);
                 }
+                physics_system->MarkEntityRigidbodyTransformDirty(entity);
             }
 
-            OnTransformUpdated();
+            OnTransformUpdated(scale_updated);
         }
     }
 
-    void TransformComponent::OnTransformUpdated()
+    void TransformComponent::OnTransformUpdated(bool scale_updated)
     {
         auto entity = GetEntity();
         if (!entity)
@@ -141,6 +139,62 @@ namespace BC
             auto& component = entity.GetComponent<SkinnedMeshRendererComponent>();
             component.UpdateOctree();
             component.UpdateBoundingBox();
+        }
+
+        // Do this inside OnTransformUpdate as it recurses down the hierarchy
+        if (auto project = Application::GetProject(); project && project->GetSceneManager()->GetPhysicsSystem() && !entity.HasComponent<RigidbodyComponent>())
+        {
+            auto physics_system = project->GetSceneManager()->GetPhysicsSystem();
+            if (scale_updated)
+            {
+                physics_system->MarkEntityShapeScaleChanged(entity);
+            }
+            if (entity.HasAnyComponent<
+                    BoxColliderComponent, 
+                    SphereColliderComponent, 
+                    CapsuleColliderComponent, 
+                    ConvexMeshColliderComponent, 
+                    HeightFieldColliderComponent, 
+                    TriangleMeshColliderComponent>())
+            {
+                // Mark Shapes Dirty if No Parent Rigidbody
+                if (auto component = entity.TryGetComponent<BoxColliderComponent>(); component && component->GetShape()->GetHandle())
+                {
+                    GUID rigid_guid = static_cast<GUID>(reinterpret_cast<uintptr_t>(component->GetShape()->GetHandle()));
+                    if (rigid_guid == entity.GetGUID()) // only mark dirty if local rigiddynamic created on shape
+                        physics_system->MarkEntityLocalShapeTransformDirty(entity);
+                }
+                if (auto component = entity.TryGetComponent<SphereColliderComponent>(); component && component->GetShape()->GetHandle())
+                {
+                    GUID rigid_guid = static_cast<GUID>(reinterpret_cast<uintptr_t>(component->GetShape()->GetHandle()));
+                    if (rigid_guid == entity.GetGUID()) // only mark dirty if local rigiddynamic created on shape
+                        physics_system->MarkEntityLocalShapeTransformDirty(entity);
+                }
+                if (auto component = entity.TryGetComponent<CapsuleColliderComponent>(); component && component->GetShape()->GetHandle())
+                {
+                    GUID rigid_guid = static_cast<GUID>(reinterpret_cast<uintptr_t>(component->GetShape()->GetHandle()));
+                    if (rigid_guid == entity.GetGUID()) // only mark dirty if local rigiddynamic created on shape
+                        physics_system->MarkEntityLocalShapeTransformDirty(entity);
+                }
+                if (auto component = entity.TryGetComponent<ConvexMeshColliderComponent>(); component && component->GetShape()->GetHandle())
+                {
+                    GUID rigid_guid = static_cast<GUID>(reinterpret_cast<uintptr_t>(component->GetShape()->GetHandle()));
+                    if (rigid_guid == entity.GetGUID()) // only mark dirty if local rigiddynamic created on shape
+                        physics_system->MarkEntityLocalShapeTransformDirty(entity);
+                }
+                if (auto component = entity.TryGetComponent<HeightFieldColliderComponent>(); component && component->GetShape()->GetHandle())
+                {
+                    GUID rigid_guid = static_cast<GUID>(reinterpret_cast<uintptr_t>(component->GetShape()->GetHandle()));
+                    if (rigid_guid == entity.GetGUID()) // only mark dirty if local rigiddynamic created on shape
+                        physics_system->MarkEntityLocalShapeTransformDirty(entity);
+                }
+                if (auto component = entity.TryGetComponent<TriangleMeshColliderComponent>(); component && component->GetShape()->GetHandle())
+                {
+                    GUID rigid_guid = static_cast<GUID>(reinterpret_cast<uintptr_t>(component->GetShape()->GetHandle()));
+                    if (rigid_guid == entity.GetGUID()) // only mark dirty if local rigiddynamic created on shape
+                        physics_system->MarkEntityLocalShapeTransformDirty(entity);
+                }
+            }
         }
 
         // Recursive down the tree
@@ -332,7 +386,7 @@ namespace BC
         {
             m_LocalScale = new_scale;
             AddFlag(TransformFlag_PropertiesUpdated);
-            UpdateLocalMatrix();
+            UpdateLocalMatrix(true);
         }
     }
 
@@ -384,26 +438,38 @@ namespace BC
 
     void TransformComponent::RotateEuler(const glm::vec3& orientation_euler_delta, bool global)
     {
+        auto cache_euler_hint = m_LocalEulerHint;
         glm::quat delta = glm::quat(glm::radians(orientation_euler_delta));
         Rotate(delta, global);
+        cache_euler_hint += orientation_euler_delta;
+        m_LocalEulerHint = cache_euler_hint;
     }
 
     void TransformComponent::RotateEulerX(float orientation_x_euler_delta, bool global)
     {
+        auto cache_euler_hint = m_LocalEulerHint;
         glm::quat delta = glm::angleAxis(glm::radians(orientation_x_euler_delta), glm::vec3(1.0f, 0.0f, 0.0f));
         Rotate(delta, global);
+        cache_euler_hint.x += orientation_x_euler_delta;
+        m_LocalEulerHint = cache_euler_hint;
     }
 
     void TransformComponent::RotateEulerY(float orientation_y_euler_delta, bool global)
     {
+        auto cache_euler_hint = m_LocalEulerHint;
         glm::quat delta = glm::angleAxis(glm::radians(orientation_y_euler_delta), glm::vec3(0.0f, 1.0f, 0.0f));
         Rotate(delta, global);
+        cache_euler_hint.y += orientation_y_euler_delta;
+        m_LocalEulerHint = cache_euler_hint;
     }
 
     void TransformComponent::RotateEulerZ(float orientation_z_euler_delta, bool global)
     {
+        auto cache_euler_hint = m_LocalEulerHint;
         glm::quat delta = glm::angleAxis(glm::radians(orientation_z_euler_delta), glm::vec3(0.0f, 0.0f, 1.0f));
         Rotate(delta, global);
+        cache_euler_hint.z += orientation_z_euler_delta;
+        m_LocalEulerHint = cache_euler_hint;
     }
 
     void TransformComponent::Scale(const glm::vec3& scale_delta, bool global)
@@ -536,6 +602,8 @@ namespace BC
             m_LocalEulerHint   = glm::degrees(glm::eulerAngles(m_LocalOrientation));
 
             AddFlag(TransformFlag_PropertiesUpdated);
+
+            UpdateLocalMatrix(true);
         }
     }
     
@@ -653,56 +721,29 @@ namespace BC
             if (!entity) 
             {
                 BC_CORE_ERROR("TransformComponent::GetGlobalMatrix: Cannot GetGlobalMatrix - Current Entity Is Invalid.");
+                m_GlobalMatrix = m_LocalMatrix;
                 return m_GlobalMatrix;
             }
 
-            glm::vec3 old_global_scale = GetScaleFromMatrix(m_GlobalMatrix);
-
             auto& meta_component = entity.GetComponent<MetaComponent>();
             auto project = Application::GetProject();
-            if (project)
+            if (!project)
             {
-                Entity parent_entity = project->GetSceneManager()->GetEntity(meta_component.GetParentGUID());
-                if (parent_entity)
-                {
-                    m_GlobalMatrix = parent_entity.GetTransform().GetGlobalMatrix() * GetLocalMatrix();
-                }
-                else if (!meta_component.HasParent())
-                {
-                    m_GlobalMatrix = m_LocalMatrix;
-                }
+                BC_CORE_ERROR("TransformComponent::GetGlobalMatrix: Cannot GetGlobalMatrix - Project Is Invalid.");
+                m_GlobalMatrix = m_LocalMatrix;
+                return m_GlobalMatrix;
             }
-            else
+            
+            Entity parent_entity = project->GetSceneManager()->GetEntity(meta_component.GetParentGUID());
+            if (!parent_entity)
             {
                 m_GlobalMatrix = m_LocalMatrix;
+                return m_GlobalMatrix;
             }
 
+            m_GlobalMatrix = parent_entity.GetTransform().GetGlobalMatrix() * m_LocalMatrix;
+
             RemoveFlag(TransformFlag_GlobalTransformUpdated);
-
-            // TODO: Implement with physics
-            // if (entity.HasComponent<SphereColliderComponent>()) {
-
-            //     auto& component = entity.GetComponent<SphereColliderComponent>();
-
-            //     if (component.GetShape() && component.GetShape()->IsStatic())
-            //         component.AddFlag(ColliderFlag_TransformUpdated);
-
-            //     if (old_global_scale != GetGlobalScale())
-            //         component.AddFlag(ColliderFlag_ShapePropsUpdated); // TODO: Fix this because it goes on the fritz when child is attached to parent, and the parent scale changes
-
-            // }
-
-            // if (entity.HasComponent<BoxColliderComponent>()) {
-
-            //     auto& component = entity.GetComponent<BoxColliderComponent>();
-
-            //     if (component.GetShape() && component.GetShape()->IsStatic())
-            //         component.AddFlag(ColliderFlag_TransformUpdated);
-
-            //     if (old_global_scale != GetGlobalScale())
-            //         component.AddFlag(ColliderFlag_ShapePropsUpdated);
-
-            // }
         }
         return m_GlobalMatrix;
     }
@@ -729,11 +770,29 @@ namespace BC
 
     glm::quat TransformComponent::GetOrientationFromMatrix(const glm::mat4& transform) 
     {
-        glm::mat3 rotation_matrix = glm::mat3(transform);
+        glm::mat3 rotation_matrix;
+        rotation_matrix[0] = glm::vec3(transform[0]);
+        rotation_matrix[1] = glm::vec3(transform[1]);
+        rotation_matrix[2] = glm::vec3(transform[2]);
 
-        rotation_matrix[0] = glm::normalize(rotation_matrix[0]);
-        rotation_matrix[1] = glm::normalize(rotation_matrix[1]);
-        rotation_matrix[2] = glm::normalize(rotation_matrix[2]);
+        // Extract scale
+        glm::vec3 scale;
+        scale.x = glm::length(rotation_matrix[0]);
+        scale.y = glm::length(rotation_matrix[1]);
+        scale.z = glm::length(rotation_matrix[2]);
+
+        // Prevent division by zero by clamping scale to a small epsilon
+        constexpr float epsilon = 1e-6f;
+        scale = glm::max(glm::abs(scale), glm::vec3(epsilon));
+
+        // Fix mirrored handedness if needed
+        if (glm::determinant(rotation_matrix) < 0.0f)
+            scale.x = -scale.x;
+
+        // Normalize rotation matrix axes
+        rotation_matrix[0] /= scale.x;
+        rotation_matrix[1] /= scale.y;
+        rotation_matrix[2] /= scale.z;
 
         return glm::quat_cast(rotation_matrix);
     }
@@ -1149,27 +1208,64 @@ namespace BC
 
         if (!entity.HasComponent<RigidbodyComponent>()) 
         {
-            // TODO: Implement with physics components
+            std::unordered_set<Entity> children_colliders_no_rigidbody{};
 
-            // // 1. I need to recursively check my children to see if there are
-            // // any children entities that HAVE a SphereCollider or BoxCollider, and 
-            // // DO NOT HAVE a Rigidbody.
-            // std::vector<Entity> child_colliders = GetChildCollidersWithoutRigidbody(entity);
+            std::function<void(Entity&)> get_child_colliders_without_rigidbody;
+            get_child_colliders_without_rigidbody = [&](Entity& current_child_entity)
+            {
+                if (current_child_entity.HasComponent<RigidbodyComponent>())
+                    return;
+                
+                if (current_child_entity.HasAnyComponent<BoxColliderComponent, SphereColliderComponent, CapsuleColliderComponent, ConvexMeshColliderComponent, HeightFieldColliderComponent, TriangleMeshColliderComponent>())
+                {
+                    children_colliders_no_rigidbody.insert(current_child_entity);
+                }
 
-            // // 2. Flag all children with Collider Components without Rigidbodies to update
-            // //    rigidbody reference in the physics system
-            // for (Entity child_entity : child_colliders) 
-            // {
-            //     // Attach the collider to the parent's Rigidbody
-            //     if (child_entity.HasComponent<SphereColliderComponent>()) 
-            //     {
-            //         child_entity.GetComponent<SphereColliderComponent>().AddFlag(ColliderFlag_RigidbodyUpdated);
-            //     }
-            //     if (child_entity.HasComponent<BoxColliderComponent>()) 
-            //     {
-            //         child_entity.GetComponent<BoxColliderComponent>().AddFlag(ColliderFlag_RigidbodyUpdated);
-            //     }
-            // }
+                for (const auto& child_guid : current_child_entity.GetComponent<MetaComponent>().GetChildrenGUID())
+                {
+                    Entity child_entity = Application::GetProject()->GetSceneManager()->GetEntity(child_guid);
+                    if (!child_entity)
+                        continue;
+                    
+                    get_child_colliders_without_rigidbody(child_entity);
+                }
+            };
+
+            get_child_colliders_without_rigidbody(entity);
+
+            // 2. Flag all children with Collider Components without Rigidbodies to update
+            //    rigidbody reference in the physics system
+            if (auto project = Application::GetProject(); project && project->GetSceneManager()->GetPhysicsSystem())
+            {
+                auto physics_system = project->GetSceneManager()->GetPhysicsSystem();
+                for (const auto& child_entity : children_colliders_no_rigidbody)
+                {
+                    if (auto component = child_entity.TryGetComponent<BoxColliderComponent>(); component) 
+                    {
+                        physics_system->RegisterShape(child_entity, component->GetShape()->GetHandle(), ShapeType_Box);
+                    }
+                    if (auto component = child_entity.TryGetComponent<SphereColliderComponent>(); component) 
+                    {
+                        physics_system->RegisterShape(child_entity, component->GetShape()->GetHandle(), ShapeType_Sphere);
+                    }
+                    if (auto component = child_entity.TryGetComponent<CapsuleColliderComponent>(); component) 
+                    {
+                        physics_system->RegisterShape(child_entity, component->GetShape()->GetHandle(), ShapeType_Capsule);
+                    }
+                    if (auto component = child_entity.TryGetComponent<ConvexMeshColliderComponent>(); component) 
+                    {
+                        physics_system->RegisterShape(child_entity, component->GetShape()->GetHandle(), ShapeType_ConvexMesh);
+                    }
+                    if (auto component = child_entity.TryGetComponent<HeightFieldColliderComponent>(); component) 
+                    {
+                        physics_system->RegisterShape(child_entity, component->GetShape()->GetHandle(), ShapeType_HeightField);
+                    }
+                    if (auto component = child_entity.TryGetComponent<TriangleMeshColliderComponent>(); component) 
+                    {
+                        physics_system->RegisterShape(child_entity, component->GetShape()->GetHandle(), ShapeType_TriangleMesh);
+                    }
+                }
+            }
         }
 
         if (HasParent()) 
@@ -1451,7 +1547,7 @@ namespace BC
             {
                 std::string script_name = script_node.first.as<std::string>();
                 bool is_active = script_node.second.as<bool>();
-                m_Scripts[script_name] = is_active;
+                AddScript(script_name, is_active);
             }
         }
 

@@ -71,7 +71,7 @@ namespace BC
                 }
             }
 
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY_GUID"))
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_HANDLE"))
             {
                 GUID dropped_entity_guid = *(const GUID*)payload->Data;
                 Entity dropped_entity = Application::GetProject()->GetSceneManager()->GetEntity(dropped_entity_guid);

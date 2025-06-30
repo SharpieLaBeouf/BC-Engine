@@ -30,6 +30,16 @@ namespace BC
     }
 
     template <typename T>
+    T* ComponentBase::TryGetComponent() const
+    {
+        if (!m_Entity)
+        {
+            return nullptr;
+        }
+        return m_Entity->TryGetComponent<T>();
+    }
+
+    template <typename T>
     T& ComponentBase::GetComponentInParent() const
     {
         if (!m_Entity)
@@ -91,35 +101,34 @@ EXPAND_COMPONENTS(INSTANTIATE_COMPONENT_BASE_TEMPLATES);
         {
             switch (type)
             {
-                case ComponentType::TransformComponent:             return "TransformComponent";
-                case ComponentType::MetaComponent:                  return "MetaComponent";
+                case ComponentType::TransformComponent:             return "Transform Component";
+                case ComponentType::MetaComponent:                  return "Meta Component";
 
-                case ComponentType::CameraComponent:                return "CameraComponent";
+                case ComponentType::CameraComponent:                return "Camera Component";
 
-                case ComponentType::AudioListenerComponent:         return "AudioListenerComponent";
-                case ComponentType::AudioEmitterComponent:          return "AudioEmitterComponent";
+                case ComponentType::AudioListenerComponent:         return "Audio Listener Component";
+                case ComponentType::AudioEmitterComponent:          return "Audio Emitter Component";
 
-                case ComponentType::LODMeshComponent:               return "LODMeshComponent";
-                case ComponentType::MeshRendererComponent:          return "MeshRendererComponent";
-                case ComponentType::SkinnedMeshRendererComponent:   return "SkinnedMeshRendererComponent";
+                case ComponentType::LODMeshComponent:               return "LOD Mesh Component";
+                case ComponentType::MeshRendererComponent:          return "Mesh Renderer Component";
+                case ComponentType::SkinnedMeshRendererComponent:   return "Skinned Mesh Renderer Component";
 
-                case ComponentType::SimpleAnimationComponent:       return "SimpleAnimationComponent";
-                case ComponentType::AnimatorComponent:              return "AnimatorComponent";
+                case ComponentType::SimpleAnimationComponent:       return "Simple Animation Component";
+                case ComponentType::AnimatorComponent:              return "Animator Component";
 
-                case ComponentType::SphereLightComponent:           return "SphereLightComponent";
-                case ComponentType::ConeLightComponent:             return "ConeLightComponent";
-                case ComponentType::DirectionalLightComponent:      return "DirectionalLightComponent";
+                case ComponentType::SphereLightComponent:           return "Sphere Light Component";
+                case ComponentType::ConeLightComponent:             return "Cone Light Component";
+                case ComponentType::DirectionalLightComponent:      return "Directional Light Component";
 
-                case ComponentType::RigidbodyComponent:             return "RigidbodyComponent";
+                case ComponentType::RigidbodyComponent:             return "Rigidbody Component";
+                
+                case ComponentType::BoxColliderComponent:           return "Box Collider Component";
+                case ComponentType::SphereColliderComponent:        return "Sphere Collider Component";
+                case ComponentType::CapsuleColliderComponent:       return "Capsule Collider Component";
 
-                case ComponentType::PlaneCollider:                  return "PlaneCollider";
-                case ComponentType::BoxColliderComponent:           return "BoxColliderComponent";
-                case ComponentType::SphereColliderComponent:        return "SphereColliderComponent";
-                case ComponentType::CapsuleColliderComponent:       return "CapsuleColliderComponent";
-
-                case ComponentType::ConvexMeshColliderComponent:    return "ConvexMeshColliderComponent";
-                case ComponentType::HeightFieldColliderComponent:   return "HeightFieldColliderComponent";
-                case ComponentType::TriangleMeshColliderComponent:  return "TriangleMeshColliderComponent";
+                case ComponentType::ConvexMeshColliderComponent:    return "Convex Mesh Collider Component";
+                case ComponentType::HeightFieldColliderComponent:   return "Height Field Collider Component";
+                case ComponentType::TriangleMeshColliderComponent:  return "Triangle Mesh Collider Component";
 
             }
             return "Unknown";
@@ -127,36 +136,36 @@ EXPAND_COMPONENTS(INSTANTIATE_COMPONENT_BASE_TEMPLATES);
 
         ComponentType ComponentTypeFromString(const std::string &type_string)
         {
-            static const std::unordered_map<std::string, ComponentType> string_to_type_map = {
-                {"TransformComponent",              ComponentType::TransformComponent},
-                {"MetaComponent",                   ComponentType::MetaComponent},
+            static const std::unordered_map<std::string, ComponentType> string_to_type_map = 
+            {
+                {"Transform Component",                 ComponentType::TransformComponent},
+                {"Meta Component",                      ComponentType::MetaComponent},
 
-                {"CameraComponent",                 ComponentType::CameraComponent},
+                {"Camera Component",                    ComponentType::CameraComponent},
 
-                {"AudioListenerComponent",          ComponentType::AudioListenerComponent},
-                {"AudioEmitterComponent",           ComponentType::AudioEmitterComponent},
+                {"Audio Listener Component",            ComponentType::AudioListenerComponent},
+                {"Audio Emitter Component",             ComponentType::AudioEmitterComponent},
 
-                {"LODMeshComponent",                ComponentType::LODMeshComponent},
-                {"MeshRendererComponent",           ComponentType::MeshRendererComponent},
-                {"SkinnedMeshRendererComponent",    ComponentType::SkinnedMeshRendererComponent},
+                {"LOD Mesh Component",                  ComponentType::LODMeshComponent},
+                {"Mesh Renderer Component",             ComponentType::MeshRendererComponent},
+                {"Skinned Mesh Renderer Component",      ComponentType::SkinnedMeshRendererComponent},
 
-                {"SimpleAnimationComponent",        ComponentType::SimpleAnimationComponent},
-                {"AnimatorComponent",               ComponentType::AnimatorComponent},
+                {"Simple Animation Component",          ComponentType::SimpleAnimationComponent},
+                {"Animator Component",                  ComponentType::AnimatorComponent},
 
-                {"SphereLightComponent",            ComponentType::SphereLightComponent},
-                {"ConeLightComponent",              ComponentType::ConeLightComponent},
-                {"DirectionalLightComponent",       ComponentType::DirectionalLightComponent},
+                {"Sphere Light Component",              ComponentType::SphereLightComponent},
+                {"Cone Light Component",                ComponentType::ConeLightComponent},
+                {"Directional Light Component",         ComponentType::DirectionalLightComponent},
 
-                {"RigidbodyComponent",              ComponentType::RigidbodyComponent},
+                {"Rigidbody Component",                 ComponentType::RigidbodyComponent},
+                
+                {"Box Collider Component",              ComponentType::BoxColliderComponent},
+                {"Sphere Collider Component",           ComponentType::SphereColliderComponent},
+                {"Capsule Collider Component",          ComponentType::CapsuleColliderComponent},
 
-                {"PlaneCollider",                   ComponentType::PlaneCollider},
-                {"BoxColliderComponent",            ComponentType::BoxColliderComponent},
-                {"SphereColliderComponent",         ComponentType::SphereColliderComponent},
-                {"CapsuleColliderComponent",        ComponentType::CapsuleColliderComponent},
-
-                {"ConvexMeshColliderComponent",     ComponentType::ConvexMeshColliderComponent},
-                {"HeightFieldColliderComponent",    ComponentType::HeightFieldColliderComponent},
-                {"TriangleMeshColliderComponent",   ComponentType::TriangleMeshColliderComponent}
+                {"Convex MeshCollider Component",       ComponentType::ConvexMeshColliderComponent},
+                {"Height FieldCollider Component",      ComponentType::HeightFieldColliderComponent},
+                {"Triangle MeshCollider Component",     ComponentType::TriangleMeshColliderComponent}
             };
 
             auto it = string_to_type_map.find(type_string);

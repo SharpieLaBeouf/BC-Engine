@@ -62,13 +62,15 @@ namespace BC
         bool SceneDeserialise(const YAML::Node& data) override;
 
         void SetActive(bool active) { m_Active = active; }
-        void SetStaticMesh(AssetHandle mesh_handle) { m_StaticMeshHandle = mesh_handle; }
+        void SetMesh(AssetHandle mesh_handle) { m_StaticMeshHandle = mesh_handle; }
         void SetCastingShadows(bool cast_shadows) { m_CastingShadow = cast_shadows; }
+        void SetDrawDebug(bool draw_debug) { m_DisplayDebugAABB = draw_debug; }
 
         bool GetActive() const { return m_Active; }
-        AssetHandle GetStaticMesh() const { return m_StaticMeshHandle; }
+        AssetHandle GetMesh() const { return m_StaticMeshHandle; }
         bool GetCastingShadows() const { return m_CastingShadow; }
         std::vector<AssetHandle>& GetMaterialHandles() { return m_MaterialHandles; }
+        bool GetDrawDebug() const { return m_DisplayDebugAABB; }
 
         void UpdateOctree()         { m_OctreeNeedsUpdate = true; }
         void UpdateBoundingBox()    { m_BoundingBoxNeedsUpdate = true; }
@@ -114,12 +116,14 @@ namespace BC
         void SetMesh(AssetHandle mesh_handle) { m_SkinnedMeshHandle = mesh_handle; }
         void SetSkeleton(AssetHandle skeleton_handle) { m_SkeletonHandle = skeleton_handle; }
         void SetCastingShadows(bool cast_shadows) { m_CastingShadow = cast_shadows; }
+        void SetDrawDebug(bool draw_debug) { m_DisplayDebugAABB = draw_debug; }
 
         bool GetActive() const { return m_Active; }
         AssetHandle GetMesh() const { return m_SkinnedMeshHandle; }
         AssetHandle GetSkeleton() const { return m_SkeletonHandle; }
         bool GetCastingShadows() const { return m_CastingShadow; }
         std::vector<AssetHandle>& GetMaterialHandles() { return m_MaterialHandles; }
+        bool GetDrawDebug() const { return m_DisplayDebugAABB; }
 
         void UpdateOctree()         { m_OctreeNeedsUpdate = true; }
         void UpdateBoundingBox()    { m_BoundingBoxNeedsUpdate = true; }

@@ -142,7 +142,7 @@ namespace BC
                 m_VulkanCore->BeginFrame();
 
                 {
-                    BC_PROFILE_SCOPE("Application::Run: 5. GUI Update Loop");
+                    BC_PROFILE_SCOPE("Application::Run: GUI Update Loop");
                     m_GUILayer->Begin();
 
                     for (Layer* layer : *m_LayerStack) 
@@ -173,7 +173,7 @@ namespace BC
 
             // End Frame, Poll Events
             {
-                BC_PROFILE_SCOPE("Application::Run: 6. Update Window");
+                BC_PROFILE_SCOPE("Application::Run: Update Window");
                 Input::EndFrame();
                 m_Window->OnUpdate();
             }
@@ -191,6 +191,12 @@ namespace BC
 
         if (m_RenderThread.joinable())
             m_RenderThread.join();
+
+        m_ScriptManager->FreeAssembly();
+        m_ScriptManager.reset();
+
+        m_Project->GetSceneManager()->OnStop();
+        m_Project.reset();
         
         Physics::Shutdown();
         Input::Shutdown();

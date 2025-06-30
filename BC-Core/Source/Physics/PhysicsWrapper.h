@@ -23,7 +23,6 @@ namespace BC
     enum : ShapeType
     {
         ShapeType_Unknown,
-        ShapeType_Plane,
         ShapeType_Box,
         ShapeType_Sphere,
         ShapeType_Capsule,
@@ -38,9 +37,10 @@ namespace BC
 		float drag = 0.0f;
 		float angular_drag = 0.05f;
 
-		bool automatic_centre_of_mass = true;
 		bool use_gravity = true;
 		bool is_kinematic = false;
+		bool automatic_centre_of_mass = true;
+        glm::vec3 manual_com_position = { 0.0f, 0.0f, 0.0f };
 
 		glm::bvec3 position_constraint = { false, false, false };
 		glm::bvec3 rotation_constraint = { false, false, false };
@@ -53,23 +53,42 @@ namespace BC
 
         RigidDynamic() = default;
         RigidDynamic(const RigidDynamicProperties& properties) : m_Properties(properties) {}
-        ~RigidDynamic();
+        ~RigidDynamic()
+        {
+            Shutdown();
+        }
 
         RigidDynamic(const RigidDynamic& other) = delete;
-        RigidDynamic(RigidDynamic&& other) noexcept;
+        RigidDynamic(RigidDynamic&& other) noexcept
+        {
+            m_Handle = other.m_Handle;                              other.m_Handle = nullptr;
+            m_Properties = std::move(other.m_Properties);           other.m_Properties = {};
+            m_DeferredForce = std::move(other.m_DeferredForce);     other.m_DeferredForce = {};
+            m_DeferredTorque = std::move(other.m_DeferredTorque);   other.m_DeferredTorque = {};
+        }
 
         RigidDynamic& operator=(const RigidDynamic& other) = delete;
-        RigidDynamic& operator=(RigidDynamic&& other) noexcept;
+        RigidDynamic& operator=(RigidDynamic&& other) noexcept
+        {
+            if (this == &other)
+                return *this;
+
+            m_Handle = other.m_Handle;                              other.m_Handle = nullptr;
+            m_Properties = std::move(other.m_Properties);           other.m_Properties = {};
+            m_DeferredForce = std::move(other.m_DeferredForce);     other.m_DeferredForce = {};
+            m_DeferredTorque = std::move(other.m_DeferredTorque);   other.m_DeferredTorque = {};
+
+            return *this;
+        }
 
         bool IsValid() const { return m_Handle != nullptr; }
 
         PxRigidDynamic* GetHandle() { return m_Handle; }
 
-        void Init();
+        void Init(const Entity& entity);
         void Shutdown();
 
-        void AddShapeReference(GUID entity_id, ShapeType shape_type);
-        void RemoveShapeReference(GUID entity_id, ShapeType shape_type);
+        void AddShapeReference(Entity entity, ShapeType shape_type);
 
         const RigidDynamicProperties& GetProperties() const { return m_Properties; }
         void SetProperties(const RigidDynamicProperties& properties) { m_Properties = properties; }
@@ -86,6 +105,9 @@ namespace BC
         bool IsUsingAutoCentreMass() const { return m_Properties.automatic_centre_of_mass; }
         void SetUsingAutoCentreMass(bool automatic_centre_of_mass);
 
+        const glm::vec3& GetCentreOfMassIfNotAuto() const { return m_Properties.manual_com_position; }
+        void SetCentreOfMassIfNotAuto(const glm::vec3& manual_com);
+
         bool IsUsingGravity() const { return m_Properties.use_gravity; }
         void SetUsingGravity(bool using_gravity);
 
@@ -93,10 +115,10 @@ namespace BC
         void SetKinematic(bool kinematic);
 
         const glm::bvec3& GetPositionConstraint() const { return m_Properties.position_constraint; }
-        void SetPositionConstraint(bool position_constraint);
+        void SetPositionConstraint(const glm::bvec3& position_constraint);
 
         const glm::bvec3& GetRotationConstraint() const { return m_Properties.rotation_constraint; }
-        void SetRotationConstraint(bool rotation_constraint);
+        void SetRotationConstraint(const glm::bvec3& rotation_constraint);
 
 		void ApplyForce(const glm::vec3& force, PxForceMode::Enum force_mode = PxForceMode::eFORCE);
 		void ApplyTorque(const glm::vec3& torque);
@@ -106,9 +128,6 @@ namespace BC
 
 		/// @brief Handle for Rigid Dynamic Actor
 		PxRigidDynamic* m_Handle = nullptr;
-
-        /// @brief Attached Shapes
-        std::unordered_map<GUID, std::unordered_set<ShapeType>> m_Shapes = {};
 
         /// @brief Properties of RigidDynamic
         RigidDynamicProperties m_Properties = {};
@@ -150,6 +169,8 @@ namespace BC
         PhysicsMaterial& operator=(const PhysicsMaterial& other);
         PhysicsMaterial& operator=(PhysicsMaterial&& other) noexcept;
 
+        AssetType GetType() const override { return AssetType::PhysicsMaterial; }
+
         bool IsValid() const { return m_Handle != nullptr; }
 
         void Init();
@@ -185,53 +206,60 @@ namespace BC
     
         virtual ~PhysicsShape() = default;
 
-        virtual void Init() = 0;
+        virtual void Init(const Entity& entity) = 0;
         virtual void Shutdown() = 0;
 
         PxShape* GetHandle() { return m_Handle; }
         ShapeType GetType() const { return m_Type; }
 
-        GUID GetRigidDynamicEntity() const { return m_RigidEntityID; }
-        std::weak_ptr<RigidDynamic> GetStandaloneRigidDynamic() { return m_StandAloneRigidDynamic; }
+        std::weak_ptr<RigidDynamic> GetStandaloneRigidDynamic() { return m_LocalRigidDynamic; }
+
+        void UpdateRigidDynamicEntity(Entity& entity);
+        void UpdateRigidDynamicEntity(RigidDynamic& rigid);
+        void CreateLocalRigidDynamic(Entity& entity);
+        void DestroyLocalRigidDynamic();
 
         bool IsValid() const { return m_Handle != nullptr; }
 
+        void SetMaterialAssetHandle(AssetHandle asset_handle) { m_PhysicsMaterialHandle = asset_handle; }
+        AssetHandle GetMaterialAssetHandle() const { return m_PhysicsMaterialHandle; }
+        const PhysicsMaterial& GetMaterialInstance() const { return m_PhysicsMaterialInstance; }
+
+        bool IsTrigger() const { return m_IsTrigger; }
+        void SetIsTrigger(bool is_trigger)
+        {
+            m_IsTrigger = is_trigger;
+            if (!m_Handle)
+                return;
+
+            m_Handle->setFlag(PxShapeFlag::eSIMULATION_SHAPE, !m_IsTrigger);
+            m_Handle->setFlag(PxShapeFlag::eTRIGGER_SHAPE, m_IsTrigger);
+        }
+
+        const glm::vec3& GetCentre() const { return m_Centre; }
+        void SetCentre(const glm::vec3& centre);
+
     protected:
+
+        /// @brief Centre of the Shape
+        glm::vec3 m_Centre = { 0.0f, 0.0f, 0.0f };
 
         /// @brief Handle for Shape
         PxShape* m_Handle = nullptr;
 
         /// @brief Type of the Shape
         ShapeType m_Type = ShapeType_Unknown;
-
-        /// @brief The Entity GUID if this is tied to a Rigidbody owned by a RigidbodyComponent on an Entity
-        GUID m_RigidEntityID = NULL_GUID;
-
+        
         /// @brief The RigidDynamic if this collider is not attached to another Rigidbody owned by a RigidbodyComponent on an Entity 
-        std::shared_ptr<RigidDynamic> m_StandAloneRigidDynamic = nullptr;
-    };
+        std::shared_ptr<RigidDynamic> m_LocalRigidDynamic = nullptr;
 
-    class PlanePhysicsShape : public PhysicsShape
-    {
+        /// @brief Physics Material Asset
+        AssetHandle m_PhysicsMaterialHandle = NULL_GUID;
 
-    public:
+        /// @brief Physics Material Instance
+        PhysicsMaterial m_PhysicsMaterialInstance = { 0.6f, 0.6f, 0.0f };
 
-        PlanePhysicsShape();
-        ~PlanePhysicsShape();
-
-        PlanePhysicsShape(const PlanePhysicsShape& other);
-        PlanePhysicsShape(PlanePhysicsShape&& other) noexcept;
-
-        PlanePhysicsShape& operator=(const PlanePhysicsShape& other);
-        PlanePhysicsShape& operator=(PlanePhysicsShape&& other) noexcept;
-
-        void Init() override;
-        void Shutdown() override;
-
-
-    private:
-
-
+        bool m_IsTrigger = false;
     };
 
     class BoxPhysicsShape : public PhysicsShape
@@ -239,22 +267,52 @@ namespace BC
 
     public:
 
-        BoxPhysicsShape();
-        ~BoxPhysicsShape();
+        BoxPhysicsShape() { m_Type = ShapeType_Box; }
+        BoxPhysicsShape(const glm::vec3& centre, const glm::vec3& half_extent) : m_HalfExtent(half_extent) { m_Centre = centre; m_Type = ShapeType_Box; }
+        ~BoxPhysicsShape()
+        {
+            Shutdown();
+        }
 
-        BoxPhysicsShape(const BoxPhysicsShape& other);
-        BoxPhysicsShape(BoxPhysicsShape&& other) noexcept;
+        BoxPhysicsShape(const BoxPhysicsShape& other) = delete;
+        BoxPhysicsShape(BoxPhysicsShape&& other) noexcept
+        {
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
 
-        BoxPhysicsShape& operator=(const BoxPhysicsShape& other);
-        BoxPhysicsShape& operator=(BoxPhysicsShape&& other) noexcept;
+            m_Centre = other.m_Centre;            other.m_Centre = { 0.0f, 0.0f, 0.0f };
+            m_HalfExtent = other.m_HalfExtent;    other.m_HalfExtent = { 0.5f, 0.5f, 0.5f };
+        }
 
-        void Init() override;
+        BoxPhysicsShape& operator=(const BoxPhysicsShape& other) = delete;
+        BoxPhysicsShape& operator=(BoxPhysicsShape&& other) noexcept
+        {
+            if (this == &other)
+                return *this;
+
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
+
+            m_Centre = other.m_Centre;            other.m_Centre = { 0.0f, 0.0f, 0.0f };
+            m_HalfExtent = other.m_HalfExtent;    other.m_HalfExtent = { 0.5f, 0.5f, 0.5f };
+
+            return *this;
+        }
+
+        void Init(const Entity& entity) override;
         void Shutdown() override;
+        
+        const glm::vec3& GetHalfExtent() const { return m_HalfExtent; }
+        void SetHalfExtent(const glm::vec3& half_extent);
 
+        void UpdateBoxShape(const glm::vec3& final_extent);
 
     private:
-    
 
+        glm::vec3 m_HalfExtent = { 0.5f, 0.5f, 0.5f };
+    
     };
 
     class SpherePhysicsShape : public PhysicsShape
@@ -262,22 +320,52 @@ namespace BC
 
     public:
 
-        SpherePhysicsShape();
-        ~SpherePhysicsShape();
+        SpherePhysicsShape() { m_Type = ShapeType_Sphere; }
+        SpherePhysicsShape(const glm::vec3& centre, float radius) : m_Radius(radius) { m_Centre = centre; m_Type = ShapeType_Sphere; }
+        ~SpherePhysicsShape()
+        {
+            Shutdown();
+        }
 
-        SpherePhysicsShape(const SpherePhysicsShape& other);
-        SpherePhysicsShape(SpherePhysicsShape&& other) noexcept;
+        SpherePhysicsShape(const SpherePhysicsShape& other) = delete;
+        SpherePhysicsShape(SpherePhysicsShape&& other) noexcept
+        {
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
 
-        SpherePhysicsShape& operator=(const SpherePhysicsShape& other);
-        SpherePhysicsShape& operator=(SpherePhysicsShape&& other) noexcept;
+            m_Centre = other.m_Centre;  other.m_Centre = { 0.0f, 0.0f, 0.0f };
+            m_Radius = other.m_Radius;  other.m_Radius = 0.5f;
+        }
 
-        void Init() override;
+        SpherePhysicsShape& operator=(const SpherePhysicsShape& other) = delete;
+        SpherePhysicsShape& operator=(SpherePhysicsShape&& other) noexcept
+        {
+            if (this == &other)
+                return *this;
+
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
+
+            m_Centre = other.m_Centre;  other.m_Centre = { 0.0f, 0.0f, 0.0f };
+            m_Radius = other.m_Radius;  other.m_Radius = 0.5f;
+
+            return *this;
+        }
+
+        void Init(const Entity& entity) override;
         void Shutdown() override;
+        
+        float GetRadius() const { return m_Radius; }
+        void SetRadius(float radius);
 
+        void UpdateSphereShape(float final_radius);
 
     private:
     
-
+        float m_Radius = 0.5f;
+    
     };
 
     class CapsulePhysicsShape : public PhysicsShape
@@ -285,21 +373,56 @@ namespace BC
 
     public:
 
-        CapsulePhysicsShape();
-        ~CapsulePhysicsShape();
+        CapsulePhysicsShape() { m_Type = ShapeType_Capsule; }
+        CapsulePhysicsShape(const glm::vec3& centre, float radius, float half_height) : m_Radius(radius), m_HalfHeight(m_HalfHeight) { m_Centre = centre; m_Type = ShapeType_Capsule; }
+        ~CapsulePhysicsShape()
+        {
+            Shutdown();
+        }
 
-        CapsulePhysicsShape(const CapsulePhysicsShape& other);
-        CapsulePhysicsShape(CapsulePhysicsShape&& other) noexcept;
+        CapsulePhysicsShape(const CapsulePhysicsShape& other) = delete;
+        CapsulePhysicsShape(CapsulePhysicsShape&& other) noexcept
+        {
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
 
-        CapsulePhysicsShape& operator=(const CapsulePhysicsShape& other);
-        CapsulePhysicsShape& operator=(CapsulePhysicsShape&& other) noexcept;
+            m_Centre = other.m_Centre;  other.m_Centre = { 0.0f, 0.0f, 0.0f };
+            m_Radius = other.m_Radius;  other.m_Radius = 0.5f;
+            m_Radius = other.m_HalfHeight;  other.m_HalfHeight = 0.5f;
+        }
 
-        void Init() override;
+        CapsulePhysicsShape& operator=(const CapsulePhysicsShape& other) = delete;
+        CapsulePhysicsShape& operator=(CapsulePhysicsShape&& other) noexcept
+        {
+            if (this == &other)
+                return *this;
+
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
+
+            m_Centre = other.m_Centre;  other.m_Centre = { 0.0f, 0.0f, 0.0f };
+            m_Radius = other.m_Radius;  other.m_Radius = 0.5f;
+
+            return *this;
+        }
+
+        void Init(const Entity& entity) override;
         void Shutdown() override;
+        
+        float GetRadius() const { return m_Radius; }
+        void SetRadius(float radius);
+        
+        float GetHalfHeight() const { return m_HalfHeight; }
+        void SetHalfHeight(float half_height);
 
+        void UpdateCapsuleShape(float final_radius, float final_half_height);
 
     private:
     
+        float m_Radius = 0.5f;
+        float m_HalfHeight = 0.5f;
 
     };
 
@@ -308,21 +431,45 @@ namespace BC
 
     public:
 
-        ConvexMeshPhysicsShape();
-        ~ConvexMeshPhysicsShape();
+        ConvexMeshPhysicsShape() { m_Type = ShapeType_ConvexMesh; }
+        ~ConvexMeshPhysicsShape()
+        {
+            Shutdown();
+        }
 
-        ConvexMeshPhysicsShape(const ConvexMeshPhysicsShape& other);
-        ConvexMeshPhysicsShape(ConvexMeshPhysicsShape&& other) noexcept;
+        ConvexMeshPhysicsShape(const ConvexMeshPhysicsShape& other) = delete;
+        ConvexMeshPhysicsShape(ConvexMeshPhysicsShape&& other) noexcept
+        {
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
 
-        ConvexMeshPhysicsShape& operator=(const ConvexMeshPhysicsShape& other);
-        ConvexMeshPhysicsShape& operator=(ConvexMeshPhysicsShape&& other) noexcept;
+            m_ConvexMeshColliderShapeAsset = other.m_ConvexMeshColliderShapeAsset;  other.m_ConvexMeshColliderShapeAsset = NULL_GUID;
+        }
 
-        void Init() override;
+        ConvexMeshPhysicsShape& operator=(const ConvexMeshPhysicsShape& other) = delete;
+        ConvexMeshPhysicsShape& operator=(ConvexMeshPhysicsShape&& other) noexcept
+        {
+            if (this == &other)
+                return *this;
+
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
+
+            m_ConvexMeshColliderShapeAsset = other.m_ConvexMeshColliderShapeAsset;  other.m_ConvexMeshColliderShapeAsset = NULL_GUID;
+
+            return *this;
+        }
+
+        void Init(const Entity& entity) override;
         void Shutdown() override;
 
 
     private:
     
+        // TODO: Think about this
+        AssetHandle m_ConvexMeshColliderShapeAsset = NULL_GUID;
 
     };
 
@@ -331,21 +478,44 @@ namespace BC
 
     public:
 
-        HeightFieldPhysicsShape();
-        ~HeightFieldPhysicsShape();
+        HeightFieldPhysicsShape() { m_Type = ShapeType_HeightField; }
+        ~HeightFieldPhysicsShape()
+        {
+            Shutdown();
+        }
 
-        HeightFieldPhysicsShape(const HeightFieldPhysicsShape& other);
-        HeightFieldPhysicsShape(HeightFieldPhysicsShape&& other) noexcept;
+        HeightFieldPhysicsShape(const HeightFieldPhysicsShape& other) = delete;
+        HeightFieldPhysicsShape(HeightFieldPhysicsShape&& other) noexcept
+        {
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
 
-        HeightFieldPhysicsShape& operator=(const HeightFieldPhysicsShape& other);
-        HeightFieldPhysicsShape& operator=(HeightFieldPhysicsShape&& other) noexcept;
+            m_ConvexMeshColliderShapeAsset = other.m_ConvexMeshColliderShapeAsset;  other.m_ConvexMeshColliderShapeAsset = NULL_GUID;
+        }
 
-        void Init() override;
+        HeightFieldPhysicsShape& operator=(const HeightFieldPhysicsShape& other) = delete;
+        HeightFieldPhysicsShape& operator=(HeightFieldPhysicsShape&& other) noexcept
+        {
+            if (this == &other)
+                return *this;
+
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
+
+            m_ConvexMeshColliderShapeAsset = other.m_ConvexMeshColliderShapeAsset;  other.m_ConvexMeshColliderShapeAsset = NULL_GUID;
+
+            return *this;
+        }
+
+        void Init(const Entity& entity) override;
         void Shutdown() override;
-
 
     private:
     
+        // TODO: Think about this
+        AssetHandle m_ConvexMeshColliderShapeAsset = NULL_GUID;    
 
     };
 
@@ -354,21 +524,45 @@ namespace BC
 
     public:
 
-        TriangleMeshPhysicsShape();
-        ~TriangleMeshPhysicsShape();
+        TriangleMeshPhysicsShape() { m_Type = ShapeType_TriangleMesh; }
+        ~TriangleMeshPhysicsShape()
+        {
+            Shutdown();
+        }
 
-        TriangleMeshPhysicsShape(const TriangleMeshPhysicsShape& other);
-        TriangleMeshPhysicsShape(TriangleMeshPhysicsShape&& other) noexcept;
+        TriangleMeshPhysicsShape(const TriangleMeshPhysicsShape& other) = delete;
+        TriangleMeshPhysicsShape(TriangleMeshPhysicsShape&& other) noexcept
+        {
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
 
-        TriangleMeshPhysicsShape& operator=(const TriangleMeshPhysicsShape& other);
-        TriangleMeshPhysicsShape& operator=(TriangleMeshPhysicsShape&& other) noexcept;
+            m_ConvexMeshColliderShapeAsset = other.m_ConvexMeshColliderShapeAsset;  other.m_ConvexMeshColliderShapeAsset = NULL_GUID;
+        }
 
-        void Init() override;
+        TriangleMeshPhysicsShape& operator=(const TriangleMeshPhysicsShape& other) = delete;
+        TriangleMeshPhysicsShape& operator=(TriangleMeshPhysicsShape&& other) noexcept
+        {
+            if (this == &other)
+                return *this;
+
+            m_Handle = other.m_Handle;                                      other.m_Handle = nullptr;
+            m_Type = other.m_Type;                                          other.m_Type = ShapeType_Unknown;
+            m_LocalRigidDynamic = std::move(other.m_LocalRigidDynamic);     other.m_LocalRigidDynamic = nullptr;
+
+            m_ConvexMeshColliderShapeAsset = other.m_ConvexMeshColliderShapeAsset;  other.m_ConvexMeshColliderShapeAsset = NULL_GUID;
+
+            return *this;
+        }
+
+        void Init(const Entity& entity) override;
         void Shutdown() override;
 
 
     private:
     
+        // TODO: Think about this
+        AssetHandle m_ConvexMeshColliderShapeAsset = NULL_GUID;    
 
     };
 

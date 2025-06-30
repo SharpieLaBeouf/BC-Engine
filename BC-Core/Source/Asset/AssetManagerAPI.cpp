@@ -6,7 +6,6 @@ namespace BC
     
 	static std::map<std::filesystem::path, AssetType> s_AssetExtensionMap = {
 
-		{ ".scene",	            AssetType::Scene },
 		{ ".prefab",	        AssetType::Prefab },
 
 		{ ".png",		        AssetType::Texture2D },
@@ -16,8 +15,8 @@ namespace BC
 		{ ".tga",		        AssetType::Texture2D },
 		{ ".tif",		        AssetType::Texture2D },
 
-		{ ".obj",		        AssetType::ModelImport },
-		{ ".fbx",		        AssetType::ModelImport },
+		{ ".obj",		        AssetType::Prefab },
+		{ ".fbx",		        AssetType::Prefab },
 
 		{ ".animator",          AssetType::AnimationStateMachine },
 
@@ -35,6 +34,17 @@ namespace BC
 		{ ".humanoidmask",	    AssetType::HumanoidMask }
 
 	};
+
+
+	const AssetMetaData& AssetManager::GetMetaData(AssetHandle handle)
+	{
+		return Application::GetProject()->GetAssetManager()->GetMetaData(handle);
+	}
+
+	const AssetMetaData& AssetManager::GetMetaData(const std::filesystem::path& asset_path)
+	{
+		return Application::GetProject()->GetAssetManager()->GetMetaData(asset_path);
+	}
 
 	AssetType AssetManager::GetAssetTypeFromFileExtension(const std::filesystem::path& extension)
 	{
@@ -58,9 +68,7 @@ namespace BC
 	{
 		switch (asset_type) 
         {
-			case AssetType::Scene:
 			case AssetType::Prefab:
-			case AssetType::ModelImport:
 			case AssetType::Material_Skybox:
 			case AssetType::Material_Standard:
 			case AssetType::AnimationStateMachine:

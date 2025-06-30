@@ -17,6 +17,8 @@ namespace YAML
 
 namespace BC
 {
+
+    class RenderTarget;
     
     struct CameraComponent : public ComponentBase
     {
@@ -55,7 +57,7 @@ namespace BC
         void SetSkyboxHandle(AssetHandle skybox_handle) { m_SkyboxHandle = skybox_handle; }
 
         const glm::vec4& GetViewport() const { return m_CameraViewport; }
-        void SetViewport(const glm::vec4& normalised_viewport, const glm::uvec2& render_target_size);
+        void SetViewport(const glm::vec4& normalised_viewport, const glm::uvec2& screen_space_render_target_size);
 
         bool GetShouldDisplay() const { return m_ShouldDisplay; }
         void SetShouldDisplay(bool should_display) { m_ShouldDisplay = should_display; }
@@ -66,7 +68,8 @@ namespace BC
         uint8_t GetDepth() const { return m_CameraDepth; }
         void SetDepth(uint8_t depth) { m_CameraDepth = depth; }
 
-        AssetHandle GetRenderTarget() const { return m_RenderTarget; }
+        AssetHandle GetRenderTargetHandle() const { return m_RenderTarget; }
+        RenderTarget* GetRenderTarget();
 
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;

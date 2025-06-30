@@ -26,13 +26,13 @@ namespace BC
 		static float GetUnscaledFixedDeltaTime();
 		static float GetFixedDeltaTime();
 
-		static void SetFixedDeltaTime(const float& fixedDeltaTime);
+		static void SetFixedDeltaTime(float fixedDeltaTime);
 
 		static uint16_t GetUnscaledFixedUpdatesHz();
 		static uint16_t GetFixedUpdatesHz();
 
 		static float GetTimeScale();
-		static void SetTimeScale(const float& timeScale);
+		static void SetTimeScale(float timeScale);
 		
 		static uint16_t GetFrameRate();
 

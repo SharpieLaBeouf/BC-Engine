@@ -5,10 +5,9 @@
 #include "LayerStack.h"
 
 #include "Graphics/Vulkan/VulkanCore.h"
-
 #include "Project/Project.h"
-
 #include "Jobs/JobSystem.h"
+#include "Scripting/ScriptManager.h"
 
 #include "Util/Platform.h"
 
@@ -64,13 +63,14 @@ namespace BC
 		Application(BCApplicationSpecification& specification);
 		virtual ~Application() = default;
 
-		static Application* 	Get() 			{ return s_Instance ? s_Instance : nullptr; 					}
-		static Window* 			GetWindow() 	{ return s_Instance ? s_Instance->m_Window.get() : nullptr; 	}
-		static VulkanCore* 		GetVulkanCore() { return s_Instance ? s_Instance->m_VulkanCore.get() : nullptr; }
-		static Project* 		GetProject() 	{ return s_Instance ? s_Instance->m_Project.get() : nullptr; 	}
-		static JobSystem*		GetJobSystem()	{ return s_Instance ? s_Instance->m_JobSystem.get() : nullptr;	}
+		static Application* 	Get() 				{ return s_Instance ? s_Instance : nullptr; 						}
+		static Window* 			GetWindow() 		{ return s_Instance ? s_Instance->m_Window.get() : nullptr; 		}
+		static VulkanCore* 		GetVulkanCore() 	{ return s_Instance ? s_Instance->m_VulkanCore.get() : nullptr; 	}
+		static Project* 		GetProject() 		{ return s_Instance ? s_Instance->m_Project.get() : nullptr; 		}
+		static ScriptManager*	GetScriptManager() 	{ return s_Instance ? s_Instance->m_ScriptManager.get() : nullptr; 	}
+		static JobSystem*		GetJobSystem()		{ return s_Instance ? s_Instance->m_JobSystem.get() : nullptr;		}
 
-		static GUILayer* 		GetGUILayer() 	{ return s_Instance ? s_Instance->m_GUILayer : nullptr;			}
+		static GUILayer* 		GetGUILayer() 		{ return s_Instance ? s_Instance->m_GUILayer : nullptr;				}
 
 		const BCApplicationSpecification& GetSpecification() const { return m_Specification; }
 
@@ -86,7 +86,15 @@ namespace BC
 
         void Close();
 
-		void SetProject(std::unique_ptr<Project> project) { m_Project = std::move(project); }
+		void SetProject(std::unique_ptr<Project> project)
+		{
+			m_Project = std::move(project);
+		}
+
+		void SetScriptManager(std::unique_ptr<ScriptManager> script_manager)
+		{
+			m_ScriptManager = std::move(script_manager);
+		}
 	
     private:
 
@@ -118,6 +126,8 @@ namespace BC
 
 		/// @brief The overarching project for this Application instance
 		std::unique_ptr<Project> m_Project = std::make_unique<Project>();
+		
+		std::unique_ptr<ScriptManager> m_ScriptManager = nullptr;
 
 		// ----------------------------------
 		// 			Multi-Threading

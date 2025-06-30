@@ -49,7 +49,6 @@ namespace BC
         // Physics
         RigidbodyComponent,
 
-        PlaneCollider,
         BoxColliderComponent,
         SphereColliderComponent,
         CapsuleColliderComponent,
@@ -86,7 +85,6 @@ namespace BC
 
     struct RigidbodyComponent;
 
-    struct PlaneCollider;
     struct BoxColliderComponent;
     struct SphereColliderComponent;
     struct CapsuleColliderComponent;
@@ -133,7 +131,6 @@ namespace BC
             // Physics
             RigidbodyComponent,
 
-            PlaneCollider,
             BoxColliderComponent,
             SphereColliderComponent,
             CapsuleColliderComponent,
@@ -159,7 +156,6 @@ namespace BC
             FUNC(ConeLightComponent) \
             FUNC(DirectionalLightComponent) \
             FUNC(RigidbodyComponent) \
-            FUNC(PlaneCollider) \
             FUNC(BoxColliderComponent) \
             FUNC(SphereColliderComponent) \
             FUNC(CapsuleColliderComponent) \
@@ -209,6 +205,9 @@ namespace BC
 
         template<typename T>
         T& GetComponent() const;
+
+        template<typename T>
+        T* TryGetComponent() const;
 
         template<typename T>
         T& GetComponentInParent() const;

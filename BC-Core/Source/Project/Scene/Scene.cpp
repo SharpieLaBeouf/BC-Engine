@@ -361,7 +361,7 @@ namespace BC
 
 				if (!mesh_component.GetEntity()) 
                 {
-					BC_CORE_ERROR("Scene::CopyScene: Cannot Insert Entity to Octree - Current Entity Is Invalid.");
+					BC_CORE_ERROR("Scene::Deserialise: Cannot Insert Entity to Octree - Current Entity Is Invalid.");
 					continue;
 				}
 
@@ -380,7 +380,7 @@ namespace BC
 
 				if (!mesh_component.GetEntity()) 
                 {
-					BC_CORE_ERROR("Scene::CopyScene: Cannot Insert Entity to Octree - Current Entity Is Invalid.");
+					BC_CORE_ERROR("Scene::Deserialise: Cannot Insert Entity to Octree - Current Entity Is Invalid.");
 					continue;
 				}
 
@@ -481,9 +481,9 @@ namespace BC
 
             // Create entities in new scene
             auto view = source_registry->view<MetaComponent>();
-            for (const auto& entity_handle : view)
+            for (auto it = view.rbegin(); it != view.rend(); ++it)
             {
-                auto& source_meta_component = view.get<MetaComponent>(entity_handle);
+                auto& source_meta_component = view.get<MetaComponent>(*it);
                 Entity new_entity = dest_scene->CreateEntity(source_meta_component.GetEntityGUID(), source_meta_component.GetName());
 
                 auto& dest_meta_component = new_entity.GetComponent<MetaComponent>();

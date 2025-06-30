@@ -24,7 +24,10 @@ namespace BC
     public:
 
         RigidbodyComponent() = default;
-        ~RigidbodyComponent() = default;
+        ~RigidbodyComponent()
+        {
+            Shutdown();
+        }
 
         RigidbodyComponent(const RigidbodyComponent& other);
         RigidbodyComponent(RigidbodyComponent&& other) noexcept;
@@ -47,39 +50,16 @@ namespace BC
 
     };
     
-    struct PlaneCollider : public ComponentBase
-    {
-    
-    public:
-
-        PlaneCollider() = default;
-        ~PlaneCollider() = default;
-
-        PlaneCollider(const PlaneCollider& other);
-        PlaneCollider(PlaneCollider&& other) noexcept;
-        PlaneCollider& operator=(const PlaneCollider& other);
-        PlaneCollider& operator=(PlaneCollider&& other) noexcept;
-
-        ComponentType GetType() const override { return ComponentType::PlaneCollider; }
-
-        bool Init() override;
-        bool Shutdown() override;
-
-        void SceneSerialise(YAML::Emitter& out) const override;
-        bool SceneDeserialise(const YAML::Node& data) override;
-
-    private:
-        
-
-    };
-    
     struct BoxColliderComponent : public ComponentBase
     {
     
     public:
 
         BoxColliderComponent() = default;
-        ~BoxColliderComponent() = default;
+        ~BoxColliderComponent()
+        {
+            Shutdown();
+        }
 
         BoxColliderComponent(const BoxColliderComponent& other);
         BoxColliderComponent(BoxColliderComponent&& other) noexcept;
@@ -94,8 +74,11 @@ namespace BC
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
 
+        BoxPhysicsShape* GetShape() { return &m_Shape; }
+
     private:
-        
+
+        BoxPhysicsShape m_Shape;
 
     };
     
@@ -105,7 +88,10 @@ namespace BC
     public:
 
         SphereColliderComponent() = default;
-        ~SphereColliderComponent() = default;
+        ~SphereColliderComponent()
+        {
+            Shutdown();
+        }
 
         SphereColliderComponent(const SphereColliderComponent& other);
         SphereColliderComponent(SphereColliderComponent&& other) noexcept;
@@ -120,8 +106,11 @@ namespace BC
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
 
+        SpherePhysicsShape* GetShape() { return &m_Shape; }
+
     private:
-        
+
+        SpherePhysicsShape m_Shape;
 
     };
     
@@ -131,7 +120,10 @@ namespace BC
     public:
 
         CapsuleColliderComponent() = default;
-        ~CapsuleColliderComponent() = default;
+        ~CapsuleColliderComponent()
+        {
+            Shutdown();
+        }
 
         CapsuleColliderComponent(const CapsuleColliderComponent& other);
         CapsuleColliderComponent(CapsuleColliderComponent&& other) noexcept;
@@ -146,8 +138,11 @@ namespace BC
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
 
+        CapsulePhysicsShape* GetShape() { return &m_Shape; }
+
     private:
-        
+
+        CapsulePhysicsShape m_Shape;
 
     };
     
@@ -157,7 +152,10 @@ namespace BC
     public:
 
         ConvexMeshColliderComponent() = default;
-        ~ConvexMeshColliderComponent() = default;
+        ~ConvexMeshColliderComponent()
+        {
+            Shutdown();
+        }
 
         ConvexMeshColliderComponent(const ConvexMeshColliderComponent& other);
         ConvexMeshColliderComponent(ConvexMeshColliderComponent&& other) noexcept;
@@ -172,8 +170,11 @@ namespace BC
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
 
+        ConvexMeshPhysicsShape* GetShape() { return &m_Shape; }
+
     private:
-        
+
+        ConvexMeshPhysicsShape m_Shape;
 
     };
     
@@ -183,7 +184,10 @@ namespace BC
     public:
 
         HeightFieldColliderComponent() = default;
-        ~HeightFieldColliderComponent() = default;
+        ~HeightFieldColliderComponent()
+        {
+            Shutdown();
+        }
 
         HeightFieldColliderComponent(const HeightFieldColliderComponent& other);
         HeightFieldColliderComponent(HeightFieldColliderComponent&& other) noexcept;
@@ -198,8 +202,11 @@ namespace BC
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
 
+        HeightFieldPhysicsShape* GetShape() { return &m_Shape; }
+
     private:
-        
+
+        HeightFieldPhysicsShape m_Shape;
 
     };
     
@@ -209,7 +216,10 @@ namespace BC
     public:
 
         TriangleMeshColliderComponent() = default;
-        ~TriangleMeshColliderComponent() = default;
+        ~TriangleMeshColliderComponent()
+        {
+            Shutdown();
+        }
 
         TriangleMeshColliderComponent(const TriangleMeshColliderComponent& other);
         TriangleMeshColliderComponent(TriangleMeshColliderComponent&& other) noexcept;
@@ -224,8 +234,11 @@ namespace BC
         void SceneSerialise(YAML::Emitter& out) const override;
         bool SceneDeserialise(const YAML::Node& data) override;
 
+        TriangleMeshPhysicsShape* GetShape() { return &m_Shape; }
+
     private:
-        
+
+        TriangleMeshPhysicsShape m_Shape;
 
     };
 

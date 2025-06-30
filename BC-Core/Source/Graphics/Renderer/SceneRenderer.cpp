@@ -27,11 +27,11 @@ namespace BC
                 CameraComponent& cam_component = entity.GetComponent<CameraComponent>();
 
                 // If Render Target Handle Not Valid
-                if (!AssetManager::IsAssetHandleValid(cam_component.GetRenderTarget()) || (!cam_component.GetShouldDisplay() && !cam_component.GetForceRender()))
+                if (!AssetManager::IsAssetHandleValid(cam_component.GetRenderTargetHandle()) || (!cam_component.GetShouldDisplay() && !cam_component.GetForceRender()))
                     continue;
 
                 // Validate camera render target
-                auto render_target_asset = AssetManager::GetAsset<RenderTarget>(cam_component.GetRenderTarget());
+                auto render_target_asset = AssetManager::GetAsset<RenderTarget>(cam_component.GetRenderTargetHandle());
                 if (!render_target_asset || !render_target_asset->IsValid())
                     continue;
                 
@@ -50,7 +50,7 @@ namespace BC
                 preview_ctx.owning_camera_entity = entity.GetGUID();
                 preview_ctx.is_editor_camera = false;
 
-                preview_ctx.render_target = cam_component.GetRenderTarget();
+                preview_ctx.render_target = cam_component.GetRenderTargetHandle();
                 preview_ctx.composite_depth = cam_component.GetDepth();
                 preview_ctx.composite_viewport = cam_component.GetViewport();
 

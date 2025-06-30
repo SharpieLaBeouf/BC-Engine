@@ -33,7 +33,8 @@ namespace BC
 
     private:
 
-        void DrawEntityHeader();
+        void DrawEntityHeader(const Entity& entity);
+        void DrawEntityScripts(const Entity& entity);
         void DrawEntityProperties();
         void DrawAssetProperties();
 

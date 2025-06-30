@@ -4,6 +4,7 @@
 
 // C++ Standard Library Headers
 #include <cstdint>
+#include <filesystem>
 
 // External Vendor Library Headers
 
@@ -19,17 +20,17 @@ namespace BC
 
 		Unknown = 0,
 
-		Scene,
-		Prefab,
+		Prefab,			// Actual prefabs or model import files, e.g., fbx, obj, etc.
 
 		Texture2D,
 		TextureCubeMap,
 		RenderTarget,
 
-		Mesh,
-		ModelImport,
+		Mesh,			// Mesh -> has sub meshes which make up entire mesh
 
 		Skeleton,
+		Humanoid,
+		HumanoidMask,
 		AnimationClip,
 		AnimationStateMachine,
 
@@ -40,9 +41,8 @@ namespace BC
 
 		Compute_Shader,
 		Shader,
-		
-		Humanoid,
-		HumanoidMask
+
+		PhysicsMaterial
 
 	};
 
@@ -62,7 +62,35 @@ namespace BC
 
 	struct AssetMetaData
 	{
+		/// @brief Name of the Asset
+		std::string name;
 
+		/// @brief Relative Path of Asset to Project/Assets Folder
+		std::filesystem::path asset_path;
+
+		/// @brief The Type of the Asset
+		AssetType type;
+
+		/// @brief The Handle of the Asset
+		AssetHandle handle = NULL_GUID;
+
+		/// @brief The Parent of the Asset -> some assets are created by others,
+		/// e.g., models create materials, when trying to get them, you need to
+		/// load the parent first
+		AssetHandle parent_handle;
+
+		/// @brief If this is a parent asset which has child references that may
+		/// be derived from this asset
+		bool has_children_assets;
+
+		/// @brief If this asset is transient and is created during runtime,
+		/// opposed to during editing
+		bool runtime_asset;
+
+		/// @brief Is this an inbuilt asset such as default engine assets, e.g., Default Shader, Default Material, Default Cube, etc.
+		bool inbuilt_asset;
+
+		operator bool() const { return handle == NULL_GUID || handle == PLACEHOLDER_0_GUID; } // Indicates Null MetaData
 	};
 
 }

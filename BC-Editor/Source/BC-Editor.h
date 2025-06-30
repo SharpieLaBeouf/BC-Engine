@@ -62,7 +62,12 @@ namespace BC
 
         void OpenScene(bool additive, const std::filesystem::path& scene_file_path = "");
 
-        void OnStopScene();
+        void OnStartRuntime();
+        void OnStartSimulation();
+
+        void OnStep();
+
+        void OnStopSceneManager();
 
         void DrawTopBar();
         void DrawDockspace();
@@ -74,6 +79,8 @@ namespace BC
         SceneState m_SceneState = SceneState_Edit;
 
         std::unordered_map<PanelType, std::unique_ptr<IEditorPanel>> m_Panels = {};
+
+        std::unique_ptr<SceneManager> m_CachedSceneManager = nullptr;
 
         std::shared_ptr<Texture2D> m_PlayButton = nullptr;
         std::shared_ptr<Texture2D> m_PauseButton = nullptr;

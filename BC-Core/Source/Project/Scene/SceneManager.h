@@ -41,10 +41,57 @@ namespace BC
         SceneManager();
         ~SceneManager();
 
-        SceneManager(const SceneManager& other) = default;
+        SceneManager(const SceneManager& other)
+        {
+            m_IsRunning = other.m_IsRunning;
+            m_IsSimulating = other.m_IsSimulating;
+            m_IsPaused = other.m_IsPaused;
+
+            m_SceneInstances.reserve(other.m_SceneInstances.size());
+            for (auto& [scene_id, src_scene] : other.m_SceneInstances)
+            {
+                auto& dst_scene = m_SceneInstances[scene_id];
+                dst_scene = Scene::CopyScene(src_scene);
+            }
+            
+            m_SceneFilePaths = other.m_SceneFilePaths;
+            
+            m_ActiveScene = other.m_ActiveScene;
+            m_EntryScene = other.m_EntryScene;
+
+            if (m_PersistentScene)
+                m_PersistentScene = Scene::CopyScene(other.m_PersistentScene);
+        }
+
         SceneManager(SceneManager&& other) = default;
 
-        SceneManager& operator=(const SceneManager& other) = default;
+        SceneManager& operator=(const SceneManager& other)
+        {
+            if (this == &other)
+                return *this;
+
+            m_IsRunning = other.m_IsRunning;
+            m_IsSimulating = other.m_IsSimulating;
+            m_IsPaused = other.m_IsPaused;
+
+            m_SceneInstances.reserve(other.m_SceneInstances.size());
+            for (auto& [scene_id, src_scene] : other.m_SceneInstances)
+            {
+                auto& dst_scene = m_SceneInstances[scene_id];
+                dst_scene = Scene::CopyScene(src_scene);
+            }
+            
+            m_SceneFilePaths = other.m_SceneFilePaths;
+            
+            m_ActiveScene = other.m_ActiveScene;
+            m_EntryScene = other.m_EntryScene;
+
+            if (m_PersistentScene)
+                m_PersistentScene = Scene::CopyScene(other.m_PersistentScene);
+
+            return *this;
+        }
+
         SceneManager& operator=(SceneManager&& other) = default;
 
         // ----------------------------

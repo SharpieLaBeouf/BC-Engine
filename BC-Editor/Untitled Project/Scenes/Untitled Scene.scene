@@ -3,12 +3,12 @@ Scene Name: Untitled Scene
 Entities:
   - Entity ID: 9468187865995121791
     Entity Name: Cube
-    TransformComponent:
-      Position: [0, 0, 0]
+    Transform Component:
+      Position: [0, -10, 0]
       Orientation: [1, 0, 0, 0]
       OrientationEulerHint: [0, 0, 0]
-      Scale: [1, 1, 1]
-    MetaComponent:
+      Scale: [20, 1, 20]
+    Meta Component:
       Name: Cube
       GUID: 9468187865995121791
       ParentGUID: 18446744073709551615
@@ -17,16 +17,18 @@ Entities:
         []
       Scripts:
         {}
-    MeshRendererComponent:
+    Mesh Renderer Component:
+      {}
+    Box Collider Component:
       {}
   - Entity ID: 9833359140942419166
     Entity Name: Directional Light
-    TransformComponent:
+    Transform Component:
       Position: [0, 0, 0]
       Orientation: [0.85355335, -0.3535534, 0.3535534, 0.14644663]
       OrientationEulerHint: [-45, 45, 0]
       Scale: [1, 1, 1]
-    MetaComponent:
+    Meta Component:
       Name: Directional Light
       GUID: 9833359140942419166
       ParentGUID: 18446744073709551615
@@ -35,16 +37,16 @@ Entities:
         []
       Scripts:
         {}
-    DirectionalLightComponent:
+    Directional Light Component:
       {}
   - Entity ID: 16716355466525531370
     Entity Name: Main Camera
-    TransformComponent:
+    Transform Component:
       Position: [0, 5, 10]
       Orientation: [0, 0, 0.70710677, -1.0536712e-08]
       OrientationEulerHint: [-3.1415927, 0, 3.1415927]
       Scale: [1, 1, 1]
-    MetaComponent:
+    Meta Component:
       Name: Main Camera
       GUID: 16716355466525531370
       ParentGUID: 18446744073709551615
@@ -53,5 +55,94 @@ Entities:
         []
       Scripts:
         {}
-    CameraComponent:
+    Camera Component:
+      Clear Type: Colour
+      Clear Colour: [1, 0, 0, 1]
+      Skybox Handle: 18446744073709551615
+      Viewport: [0, 0.5, 0.5, 1]
+      Should Display: true
+      Force Render: false
+      Camera Depth: 0
+      Camera Instance:
+        Type: Perspective
+        FOV: 60
+        Near: 60
+        Far: 60
+  - Entity ID: 15094569843444882827
+    Entity Name: Ball
+    Transform Component:
+      Position: [0, 5, 0]
+      Orientation: [1, 0, 0, 0]
+      OrientationEulerHint: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Meta Component:
+      Name: Ball
+      GUID: 15094569843444882827
+      ParentGUID: 18446744073709551615
+      PrefabAssetHandle: 18446744073709551615
+      Children:
+        []
+      Scripts:
+        {}
+    Sphere Collider Component:
+      {}
+  - Entity ID: 13093262618698563424
+    Entity Name: Capsule
+    Transform Component:
+      Position: [-1, 1, 0]
+      Orientation: [1, 0, 0, 0]
+      OrientationEulerHint: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Meta Component:
+      Name: Capsule
+      GUID: 13093262618698563424
+      ParentGUID: 18446744073709551615
+      PrefabAssetHandle: 18446744073709551615
+      Children:
+        - ChildGUID: 10806363017467993711
+      Scripts:
+        {}
+    Mesh Renderer Component:
+      {}
+    Capsule Collider Component:
+      {}
+  - Entity ID: 10806363017467993711
+    Entity Name: Sphere
+    Transform Component:
+      Position: [1, -2, 0]
+      Orientation: [1, 0, 0, 0]
+      OrientationEulerHint: [0, -0, 0]
+      Scale: [1, 1, 1]
+    Meta Component:
+      Name: Sphere
+      GUID: 10806363017467993711
+      ParentGUID: 13093262618698563424
+      PrefabAssetHandle: 18446744073709551615
+      Children:
+        - ChildGUID: 10461876077672021483
+      Scripts:
+        {}
+    Mesh Renderer Component:
+      {}
+    Sphere Collider Component:
+      {}
+  - Entity ID: 10461876077672021483
+    Entity Name: Cube
+    Transform Component:
+      Position: [1, -2, 0]
+      Orientation: [1, 0, 0, 0]
+      OrientationEulerHint: [0, -0, 0]
+      Scale: [1, 1, 1]
+    Meta Component:
+      Name: Cube
+      GUID: 10461876077672021483
+      ParentGUID: 10806363017467993711
+      PrefabAssetHandle: 18446744073709551615
+      Children:
+        []
+      Scripts:
+        {}
+    Mesh Renderer Component:
+      {}
+    Box Collider Component:
       {}

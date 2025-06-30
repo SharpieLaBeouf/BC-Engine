@@ -4,6 +4,11 @@
 #include <string_view>
 #include <cstdint>
 
+namespace BC
+{
+    using StringHash = uint64_t;
+}
+
 namespace BC::Util
 {
 

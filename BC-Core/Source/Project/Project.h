@@ -44,6 +44,8 @@ namespace BC
         Project& operator=(Project&& other) = default;
 
         SceneManager* GetSceneManager() const { return m_SceneManager.get(); }
+        void SetSceneManager(std::unique_ptr<SceneManager> scene_manager) { m_SceneManager->OnStop(); m_SceneManager = std::move(scene_manager); }
+
         AssetManagerBase* GetAssetManager() const { return m_AssetManager.get(); }
         
         const std::string& GetName() const { return m_Name; }
