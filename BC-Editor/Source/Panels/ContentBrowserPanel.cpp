@@ -503,7 +503,7 @@ namespace BC
 					// JUST SHOW THE PATH
 					else 
                     {
-						ImGui::TextWrapped(entry.path().filename().string().c_str());
+						ImGui::TextWrapped("%s", entry.path().filename().string().c_str());
 					}
 
 				}

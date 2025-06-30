@@ -56,10 +56,10 @@ namespace BC
         static void Entity_Destroy(GUID entity_guid);
 
         static uint32_t Entity_FindByName(const char* name);
-        static uint32_t Entity_FindByUUID(GUID entity_guid);
+        static uint32_t Entity_FindByGUID(GUID entity_guid);
 
-        static UUID Entity_GetParent(GUID entity_guid);
-        static void Entity_SetParent(GUID entity_guid, UUID parent_uuid);
+        static GUID Entity_GetParent(GUID entity_guid);
+        static void Entity_SetParent(GUID entity_guid, GUID parent_guid);
         
         static const char* Entity_GetName(GUID entity_guid);
         static void Entity_SetName(GUID entity_guid, const char* value);
@@ -81,7 +81,7 @@ namespace BC
         static uint64_t Entity_GetComponentsInParentCount(GUID entity_guid, ScriptFieldType component_type, size_t* count);
         static uint64_t Entity_GetComponentsInChildrenCount(GUID entity_guid, ScriptFieldType component_type, size_t* count);
 
-        static void Entity_GetComponentsInHierarchyCopy(UUID* entity_array, size_t count, uint64_t cached_key);
+        static void Entity_GetComponentsInHierarchyCopy(GUID* entity_array, size_t count, uint64_t cached_key);
 
         template<typename T>
         static uint64_t CacheAndReturn(Entity& entity, uint64_t base_key, size_t* count, bool get_parents)
@@ -216,7 +216,7 @@ namespace BC
         static void SkinnedMeshComponent_SetAllMaterials(GUID entity_guid, const uint32_t* material_array, size_t material_count);
 
         static uint32_t SkinnedMeshComponent_GetMaterial(GUID entity_guid, size_t material_index);
-        static void SkinnedMeshComponent_SetMaterial(GUID entity_guid, size_t material_index, UUID material_handle);
+        static void SkinnedMeshComponent_SetMaterial(GUID entity_guid, size_t material_index, GUID material_handle);
 
 #pragma endregion
 
@@ -458,17 +458,17 @@ namespace BC
 #pragma region Compute Shader
 
         // TODO: implement
-        // static void ComputeShader_SetBuffer(UUID asset_handle, ComputeBuffer* buffer, uint32_t binding_index);
-        // static void ComputeShader_Dispatch(UUID asset_handle, uint32_t x, uint32_t y, uint32_t z);
-        // static void ComputeShader_SetBool(UUID asset_handle, const char* name, bool value);
-        // static void ComputeShader_SetInt(UUID asset_handle, const char* name, int32_t value);
-        // static void ComputeShader_SetUInt(UUID asset_handle, const char* name, uint32_t value);
-        // static void ComputeShader_SetFloat(UUID asset_handle, const char* name, float value);
-        // static void ComputeShader_SetVector2(UUID asset_handle, const char* name, glm::vec2 value);
-        // static void ComputeShader_SetVector3(UUID asset_handle, const char* name, glm::vec3 value);
-        // static void ComputeShader_SetVector4(UUID asset_handle, const char* name, glm::vec4 value);
-        // static void ComputeShader_SetMat3(UUID asset_handle, const char* name, const float* value);
-        // static void ComputeShader_SetMat4(UUID asset_handle, const char* name, const float* value);
+        // static void ComputeShader_SetBuffer(GUID asset_handle, ComputeBuffer* buffer, uint32_t binding_index);
+        // static void ComputeShader_Dispatch(GUID asset_handle, uint32_t x, uint32_t y, uint32_t z);
+        // static void ComputeShader_SetBool(GUID asset_handle, const char* name, bool value);
+        // static void ComputeShader_SetInt(GUID asset_handle, const char* name, int32_t value);
+        // static void ComputeShader_SetUInt(GUID asset_handle, const char* name, uint32_t value);
+        // static void ComputeShader_SetFloat(GUID asset_handle, const char* name, float value);
+        // static void ComputeShader_SetVector2(GUID asset_handle, const char* name, glm::vec2 value);
+        // static void ComputeShader_SetVector3(GUID asset_handle, const char* name, glm::vec3 value);
+        // static void ComputeShader_SetVector4(GUID asset_handle, const char* name, glm::vec4 value);
+        // static void ComputeShader_SetMat3(GUID asset_handle, const char* name, const float* value);
+        // static void ComputeShader_SetMat4(GUID asset_handle, const char* name, const float* value);
 
 #pragma endregion
 
@@ -486,9 +486,9 @@ namespace BC
 
         // TODO: implement
         // static uint32_t Material_Create(const char* material_name);
-        // static void Material_SetShader(UUID asset_handle, UUID shader_handle);
-        // static uint32_t Material_GetShader(UUID asset_handle);
-        // static void Material_Destroy(UUID asset_handle);
+        // static void Material_SetShader(GUID asset_handle, GUID shader_handle);
+        // static uint32_t Material_GetShader(GUID asset_handle);
+        // static void Material_Destroy(GUID asset_handle);
 
 #pragma endregion
 
@@ -514,31 +514,31 @@ namespace BC
         // static uint32_t Mesh_CreateNewMesh();
         // static void Mesh_Destroy(AssetHandle handle);
 
-        // static void Mesh_SubmitChanges(UUID asset_handle, bool clearCPUData);
-        // static void Mesh_CopyBufferDataToCPU(UUID asset_handle);
-        // static void Mesh_ClearBufferDataFromCPU(UUID asset_handle);
+        // static void Mesh_SubmitChanges(GUID asset_handle, bool clearCPUData);
+        // static void Mesh_CopyBufferDataToCPU(GUID asset_handle);
+        // static void Mesh_ClearBufferDataFromCPU(GUID asset_handle);
 
-        // static void Mesh_SetVertices(UUID asset_handle, const float* data, size_t data_size);
-        // static void Mesh_SetNormals(UUID asset_handle, const float* data, size_t data_size);
-        // static void Mesh_SetTextureCoords(UUID asset_handle, const float* data, size_t data_size);
-        // static void Mesh_SetTangents(UUID asset_handle, const float* data, size_t data_size);
-        // static void Mesh_SetBitangents(UUID asset_handle, const float* data, size_t data_size);
-        // static void Mesh_SetBoneIDs(UUID asset_handle, const glm::ivec4* data, size_t data_size);
-        // static void Mesh_SetBoneWeights(UUID asset_handle, const glm::vec4* data, size_t data_size);
+        // static void Mesh_SetVertices(GUID asset_handle, const float* data, size_t data_size);
+        // static void Mesh_SetNormals(GUID asset_handle, const float* data, size_t data_size);
+        // static void Mesh_SetTextureCoords(GUID asset_handle, const float* data, size_t data_size);
+        // static void Mesh_SetTangents(GUID asset_handle, const float* data, size_t data_size);
+        // static void Mesh_SetBitangents(GUID asset_handle, const float* data, size_t data_size);
+        // static void Mesh_SetBoneIDs(GUID asset_handle, const glm::ivec4* data, size_t data_size);
+        // static void Mesh_SetBoneWeights(GUID asset_handle, const glm::vec4* data, size_t data_size);
 
         // // pointer to const float*, pointer to data size_t
-        // static void Mesh_GetVertices(UUID asset_handle, const float** data, size_t* data_size);
-        // static void Mesh_GetNormals(UUID asset_handle, const float** data, size_t* data_size);
-        // static void Mesh_GetTextureCoords(UUID asset_handle, const float** data, size_t* data_size);
-        // static void Mesh_GetTangents(UUID asset_handle, const float** data, size_t* data_size);
-        // static void Mesh_GetBitangents(UUID asset_handle, const float** data, size_t* data_size);
-		// static void Mesh_GetBoneIDs(UUID asset_handle, const glm::ivec4** data, size_t* data_size);
-		// static void Mesh_GetBoneWeights(UUID asset_handle, const glm::vec4** data, size_t* data_size);
+        // static void Mesh_GetVertices(GUID asset_handle, const float** data, size_t* data_size);
+        // static void Mesh_GetNormals(GUID asset_handle, const float** data, size_t* data_size);
+        // static void Mesh_GetTextureCoords(GUID asset_handle, const float** data, size_t* data_size);
+        // static void Mesh_GetTangents(GUID asset_handle, const float** data, size_t* data_size);
+        // static void Mesh_GetBitangents(GUID asset_handle, const float** data, size_t* data_size);
+		// static void Mesh_GetBoneIDs(GUID asset_handle, const glm::ivec4** data, size_t* data_size);
+		// static void Mesh_GetBoneWeights(GUID asset_handle, const glm::vec4** data, size_t* data_size);
 
-        // static void Mesh_SetTriangles(UUID asset_handle, const uint32_t* data, size_t data_size);
-        // static void Mesh_GetTriangles(UUID asset_handle, const uint32_t** data, size_t* data_size);
+        // static void Mesh_SetTriangles(GUID asset_handle, const uint32_t* data, size_t data_size);
+        // static void Mesh_GetTriangles(GUID asset_handle, const uint32_t** data, size_t* data_size);
 
-        // static void Mesh_RecalculateNormals(UUID asset_handle);
+        // static void Mesh_RecalculateNormals(GUID asset_handle);
 
 #pragma endregion
 

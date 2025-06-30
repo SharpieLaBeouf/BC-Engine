@@ -1,7 +1,7 @@
 #include "BC_PCH.h"
 #include "ScriptManager.h"
-
 #include "ScriptRegister.h"
+#include "ScriptDefines.h"
 
 namespace BC
 {
@@ -227,8 +227,8 @@ namespace BC
     #elif defined(BC_PLATFORM_LINUX)
 
         auto load_script_func = reinterpret_cast<void(*)()>(dlsym(m_Assembly, "LoadScripts"));
-        auto get_script_info_func = reinterpret_cast<const ScriptClass*(*)(size_t*)>(dlsym(m_Assembly, "GetScriptClassInfoArray"));
-    
+        auto get_script_info_func = reinterpret_cast<const ScriptClassInfo*(*)(size_t*)>(dlsym(m_Assembly, "GetScriptClassInfoArray"));
+
     #endif
 
         if (!ScriptRegister::RegisterAll(m_Assembly))

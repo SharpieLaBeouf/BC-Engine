@@ -203,7 +203,7 @@ namespace BC
 
     void SimpleAnimationComponent::Play(const char *clip_name, bool should_loop)
     {
-		uint32_t found_index = NULL_GUID;
+		size_t found_index = NULL_GUID;
 		for (auto it = m_AnimationClipHandles.begin(); it != m_AnimationClipHandles.end(); )
 		{
 			if (*it == NULL_GUID)

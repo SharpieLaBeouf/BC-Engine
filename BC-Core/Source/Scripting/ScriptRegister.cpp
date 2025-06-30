@@ -62,7 +62,7 @@ namespace BC
         register_function("Entity_Create", reinterpret_cast<void*>(&Entity_Create));
         register_function("Entity_Destroy", reinterpret_cast<void*>(&Entity_Destroy));
         register_function("Entity_FindByName", reinterpret_cast<void*>(&Entity_FindByName));
-        register_function("Entity_FindByUUID", reinterpret_cast<void*>(&Entity_FindByUUID));
+        register_function("Entity_FindByGUID", reinterpret_cast<void*>(&Entity_FindByGUID));
         register_function("Entity_GetParent", reinterpret_cast<void*>(&Entity_GetParent));
         register_function("Entity_SetParent", reinterpret_cast<void*>(&Entity_SetParent));
         register_function("Entity_GetName", reinterpret_cast<void*>(&Entity_GetName));
@@ -355,15 +355,15 @@ namespace BC
     {
         return 0;
     }
-    uint32_t ScriptRegister::Entity_FindByUUID(GUID entity_guid)
+    uint32_t ScriptRegister::Entity_FindByGUID(GUID entity_guid)
     {
         return 0;
     }
-    UUID ScriptRegister::Entity_GetParent(GUID entity_guid)
+    GUID ScriptRegister::Entity_GetParent(GUID entity_guid)
     {
-        return UUID();
+        return GUID();
     }
-    void ScriptRegister::Entity_SetParent(GUID entity_guid, UUID parent_uuid)
+    void ScriptRegister::Entity_SetParent(GUID entity_guid, GUID parent_guid)
     {
     }
     const char *ScriptRegister::Entity_GetName(GUID entity_guid)
@@ -403,7 +403,7 @@ namespace BC
     {
         return 0;
     }
-    void ScriptRegister::Entity_GetComponentsInHierarchyCopy(UUID *entity_array, size_t count, uint64_t cached_key)
+    void ScriptRegister::Entity_GetComponentsInHierarchyCopy(GUID *entity_array, size_t count, uint64_t cached_key)
     {
     }
 
@@ -714,7 +714,7 @@ namespace BC
         return 0;
     }
 
-    void ScriptRegister::SkinnedMeshComponent_SetMaterial(GUID entity_guid, size_t material_index, UUID material_handle)
+    void ScriptRegister::SkinnedMeshComponent_SetMaterial(GUID entity_guid, size_t material_index, GUID material_handle)
     {
     }
 
