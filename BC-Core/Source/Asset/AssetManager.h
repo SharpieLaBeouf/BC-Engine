@@ -34,7 +34,7 @@ namespace BC
 
 	protected:
 
-		std::unordered_map<AssetHandle, AssetMetaData> m_MetaDataRegistry = {};
+		AssetRegistry m_MetaDataRegistry = {};
 
     };
 

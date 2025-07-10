@@ -35,7 +35,7 @@ namespace BC
                 continue;
             }
 
-            switch (material_asset->GetMaterialRenderType())
+            switch (material_asset->GetRenderType())
             {
                 case MaterialRenderType_Opaque:
                 {

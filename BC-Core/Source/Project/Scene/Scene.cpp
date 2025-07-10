@@ -36,36 +36,6 @@ namespace BC
 
     }
 
-    Scene::Scene(const Scene &other)
-    {
-
-    }
-    
-    Scene::Scene(Scene&& other)
-    {
-
-    }
-    
-    Scene& Scene::operator=(const Scene &other)
-    {
-        if (this == &other)
-            return *this;
-
-        // TODO: Implement
-
-        return *this;
-    }
-    
-    Scene& Scene::operator=(Scene&& other)
-    {
-        if (this == &other)
-            return *this;
-
-        // TODO: Implement
-
-        return *this;
-    }
-
     Entity Scene::CreateEntity(const std::string &name, GUID parent_guid)
     {
         return CreateEntity(GUID(), name, parent_guid);
@@ -128,9 +98,9 @@ namespace BC
         return Entity{};
     }
 
-    bool Scene::HasEntity(GUID entity_guid) const { return GetEntity(entity_guid); }
+    bool Scene::HasEntity(GUID entity_guid) const { return GetEntity(entity_guid).operator bool(); }
 
-    bool Scene::HasEntity(const std::string& entity_name) const { return GetEntity(entity_name); }
+    bool Scene::HasEntity(const std::string& entity_name) const { return GetEntity(entity_name).operator bool(); }
 
     bool Scene::IsEntityValid(const Entity& entity) const
     {

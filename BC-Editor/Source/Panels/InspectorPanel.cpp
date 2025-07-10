@@ -192,7 +192,7 @@ namespace BC
 
                     if (handle != NULL_GUID && AssetManager::IsAssetHandleValid(handle))
                     {
-                        if (AssetManager::GetMetaData(handle).type == AssetType::Material_Skybox)
+                        if (AssetManager::GetMetaData(handle).type == AssetType::Skybox)
                         {
                             component.SetSkyboxHandle(handle);
                         }

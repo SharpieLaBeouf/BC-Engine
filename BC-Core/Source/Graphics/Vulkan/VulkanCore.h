@@ -17,6 +17,7 @@
 
 // External Vendor Library Headers
 #include <vulkan/vulkan.h>
+#include <vma/vk_mem_alloc.h>
 
 typedef struct GLFWwindow GLFWwindow;
 
@@ -52,15 +53,18 @@ namespace BC
 
         VkPhysicalDevice GetPhysicalDevice() const;
         const VkDevice GetLogicalDevice() const;
+        VmaAllocator GetAllocator() const { return m_Allocator; }
 
         const Swapchain& GetSwapchain() const { return *m_Swapchain.get(); }
 
         uint32_t GetGraphicsQueueFamily() const;
         uint32_t GetComputeQueueFamily() const;
         uint32_t GetPresentQueueFamily() const;
+        uint32_t GetTransferQueueFamily() const;
         VkQueue GetGraphicsQueue() const;
         VkQueue GetComputeQueue() const;
         VkQueue GetPresentQueue() const;
+        VkQueue GetTransferQueue() const;
 
         void ResizeScreenSpace(uint32_t width, uint32_t height);
         void ResizeSwapchain(const SwapchainSpecification& swapchain_spec);
@@ -105,11 +109,15 @@ namespace BC
             std::optional<uint32_t> graphics_family;
             std::optional<uint32_t> compute_family;
             std::optional<uint32_t> present_family;
+            std::optional<uint32_t> transfer_family;
         } m_QueueFamilyIndices;
 
         VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
         VkQueue m_ComputeQueue = VK_NULL_HANDLE;
         VkQueue m_PresentQueue = VK_NULL_HANDLE;
+        VkQueue m_TransferQueue = VK_NULL_HANDLE;
+        
+        VmaAllocator m_Allocator = VK_NULL_HANDLE;
         
         std::unique_ptr<Swapchain> m_Swapchain = nullptr;
         uint32_t m_CurrentImageIndex;

@@ -823,6 +823,11 @@ namespace BC
         m_Handle = nullptr;
     }
 
+    std::shared_ptr<PhysicsMaterial> PhysicsMaterial::CreatePhysicsMaterial(const std::string &serialised_physics_material_data)
+    {
+        return std::shared_ptr<PhysicsMaterial>();
+    }
+
 #pragma endregion
 
 }

@@ -20,6 +20,8 @@ namespace YAML
 namespace BC
 {
 
+    class Prefab;
+
     struct LODMeshComponent : public ComponentBase
     {
     
@@ -63,13 +65,14 @@ namespace BC
 
         void SetActive(bool active) { m_Active = active; }
         void SetMesh(AssetHandle mesh_handle) { m_StaticMeshHandle = mesh_handle; }
+        void SetMaterials(const std::vector<AssetHandle>& materials) { m_MaterialHandles = materials; }
         void SetCastingShadows(bool cast_shadows) { m_CastingShadow = cast_shadows; }
         void SetDrawDebug(bool draw_debug) { m_DisplayDebugAABB = draw_debug; }
 
         bool GetActive() const { return m_Active; }
         AssetHandle GetMesh() const { return m_StaticMeshHandle; }
-        bool GetCastingShadows() const { return m_CastingShadow; }
         std::vector<AssetHandle>& GetMaterialHandles() { return m_MaterialHandles; }
+        bool GetCastingShadows() const { return m_CastingShadow; }
         bool GetDrawDebug() const { return m_DisplayDebugAABB; }
 
         void UpdateOctree()         { m_OctreeNeedsUpdate = true; }
@@ -133,6 +136,12 @@ namespace BC
 
         std::unordered_map<GUID, GUID>* GetBoneMapping() { return &m_SkeletonBoneMapping; }
         std::vector<glm::mat4>* GetFinalTransformations() { return &m_FinalBoneTransformations; }
+
+    private:
+        
+        void CalculatePrefabBindPoseBoneTransformations(std::shared_ptr<Prefab> model_prefab);
+
+        friend class AssetImporter;
 
     private:
 

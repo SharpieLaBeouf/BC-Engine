@@ -383,7 +383,7 @@ namespace BC
 						ImGui::ImageButton(entry.path().string().c_str(), (ImTextureID)(uintptr_t)texture_id, {64.0f, 64.0f}, {0, 1}, {1, 0});
 
                         // TODO: Implement Selection Context
-						// if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && AssetManager::GetAssetTypeFromFileExtension(entry.path().extension()) == AssetType::Material_Standard)
+						// if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && AssetManager::GetAssetTypeFromFileExtension(entry.path().extension()) == AssetType::Material)
 						// 	editor_layer.m_MaterialContext = Project::GetStaticEditorAssetManager()->GetHandleFromFilePath(entry.path(), Project::GetActiveProject()->GetAssetDirectory());
 
 						if (ImGui::BeginDragDropSource())

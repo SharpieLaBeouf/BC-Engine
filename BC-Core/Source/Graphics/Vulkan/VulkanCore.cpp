@@ -39,6 +39,14 @@ namespace BC
         BC_THROW(result == VK_SUCCESS, "VulkanCore::Init: Failed to Create Globals.");
         BC_CORE_TRACE("VulkanCore::Init: Created Globals.");
 
+        VmaAllocatorCreateInfo allocator_info = {};
+        allocator_info.physicalDevice = GetPhysicalDevice();
+        allocator_info.device = GetLogicalDevice();
+        allocator_info.instance = GetInstance();
+        allocator_info.vulkanApiVersion = VK_API_VERSION_1_3;
+        result = vmaCreateAllocator(&allocator_info, &m_Allocator);
+        BC_THROW(result == VK_SUCCESS, "VulkanCore::Init: Failed to Create VMA Allocator.");
+
         // 6. Swapchain
         auto capabilities = Swapchain::GetSwapchainSupport(GetPhysicalDevice(), GetSurface());
         Swapchain::s_MinImageCount = std::max<uint32_t>(capabilities.Capabilities.minImageCount, 2);
@@ -74,11 +82,13 @@ namespace BC
             BC_THROW(m_DebugMessenger, "VulkanCore::Init: Debug Messenger Not Valid");
         BC_THROW(m_Surface,        "VulkanCore::Init: Surface Not Valid");
         BC_THROW(m_LogicalDevice,  "VulkanCore::Init: Logical Device Not Valid");
+        BC_THROW(m_Allocator,      "VulkanCore::Init: VMA Allocator Not Valid");
 
         BC_THROW(m_Swapchain,      "VulkanCore::Init: Swapchain Not Valid");
         BC_THROW(m_GraphicsQueue,  "VulkanCore::Init: Graphics Queue Not Valid");
         BC_THROW(m_ComputeQueue,   "VulkanCore::Init: Compute Queue Not Valid");
         BC_THROW(m_PresentQueue,   "VulkanCore::Init: Present Queue Not Valid");
+        BC_THROW(m_TransferQueue,  "VulkanCore::Init: Transfer Queue Not Valid");
 
         BC_CATCH_END_RETURN(VK_ERROR_UNKNOWN);
 
@@ -110,10 +120,15 @@ namespace BC
 
         if (m_DefaultSampler)
             vkDestroySampler(m_LogicalDevice, m_DefaultSampler, nullptr);
+
         if (m_StaticDescriptorPool)
             vkDestroyDescriptorPool(m_LogicalDevice, m_StaticDescriptorPool, nullptr);
+
         if (m_ImageSamplerSetLayout)
             vkDestroyDescriptorSetLayout(m_LogicalDevice, m_ImageSamplerSetLayout, nullptr);
+
+        if (m_Allocator)
+            vmaDestroyAllocator(m_Allocator);
 
         if (m_LogicalDevice)
             vkDestroyDevice(m_LogicalDevice, VK_NULL_HANDLE);
@@ -269,6 +284,14 @@ namespace BC
         return m_QueueFamilyIndices.present_family.value();
     }
 
+    uint32_t VulkanCore::GetTransferQueueFamily() const
+    {
+        if (!m_QueueFamilyIndices.transfer_family.has_value())
+            return -1;
+
+        return m_QueueFamilyIndices.transfer_family.value();
+    }
+
     VkQueue VulkanCore::GetGraphicsQueue() const
     {
         return m_GraphicsQueue;
@@ -282,6 +305,11 @@ namespace BC
     VkQueue VulkanCore::GetPresentQueue() const
     {
         return m_PresentQueue;
+    }
+
+    VkQueue VulkanCore::GetTransferQueue() const
+    {
+        return m_TransferQueue;
     }
 
     void VulkanCore::ResizeScreenSpace(uint32_t width, uint32_t height)
@@ -598,6 +626,11 @@ namespace BC
                 {
                     m_QueueFamilyIndices.compute_family = i;
                 }
+                
+                if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) 
+                {
+                    m_QueueFamilyIndices.transfer_family = i;
+                }
 
                 VkBool32 presentSupport = false;
                 vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevices[m_SelectedDeviceIndex], i, m_Surface, &presentSupport);
@@ -608,7 +641,7 @@ namespace BC
                 i++;
             }
 
-            if (!m_QueueFamilyIndices.graphics_family.has_value() || !m_QueueFamilyIndices.compute_family.has_value() || !m_QueueFamilyIndices.present_family.has_value())
+            if (!m_QueueFamilyIndices.graphics_family.has_value() || !m_QueueFamilyIndices.compute_family.has_value() || !m_QueueFamilyIndices.present_family.has_value() || !m_QueueFamilyIndices.transfer_family.has_value())
             {
                 Shutdown();
                 std::cerr << "Error: Device Queues Not Contain All Functionality!\n";
@@ -620,22 +653,22 @@ namespace BC
             BC_CORE_TRACE("Selected Device: {}", properties.deviceName);
         }
         
-        float queuePriority = 1.0f;
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> unique_queue_families = { m_QueueFamilyIndices.graphics_family.value(), m_QueueFamilyIndices.present_family.value(), m_QueueFamilyIndices.compute_family.value() };
+        float queue_priority = 1.0f;
+        std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+        std::set<uint32_t> unique_queue_families = { m_QueueFamilyIndices.graphics_family.value(), m_QueueFamilyIndices.present_family.value(), m_QueueFamilyIndices.compute_family.value(), m_QueueFamilyIndices.transfer_family.value() };
 
-        for (uint32_t queueFamily : unique_queue_families) {
-            
+        for (uint32_t queue_family : unique_queue_families) 
+        {
             VkDeviceQueueCreateInfo queue_create = 
             {
                 .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
                 .pNext = VK_NULL_HANDLE,
                 .flags = 0,
-                .queueFamilyIndex = queueFamily,
+                .queueFamilyIndex = queue_family,
                 .queueCount = 1,
-                .pQueuePriorities = &queuePriority
+                .pQueuePriorities = &queue_priority
             };
-            queueCreateInfos.push_back(queue_create);
+            queue_create_infos.push_back(queue_create);
         }
 
         VkPhysicalDeviceFeatures device_features = {};
@@ -651,8 +684,8 @@ namespace BC
             .pNext = VK_NULL_HANDLE,
             .flags = 0,
             
-            .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
-            .pQueueCreateInfos = queueCreateInfos.data(),
+            .queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size()),
+            .pQueueCreateInfos = queue_create_infos.data(),
 
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = VK_NULL_HANDLE,
@@ -672,6 +705,7 @@ namespace BC
         vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.graphics_family.value(), 0, &m_GraphicsQueue);
         vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.present_family.value(), 0, &m_PresentQueue);
         vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.compute_family.value(), 0, &m_ComputeQueue);
+        vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.transfer_family.value(), 0, &m_TransferQueue);
 
         return VK_SUCCESS;
     }

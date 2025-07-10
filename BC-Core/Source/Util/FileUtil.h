@@ -23,6 +23,28 @@
 
 namespace BC::Util
 {
+    static std::vector<uint8_t> LoadDataStreamFromFile(const std::filesystem::path& file_path)
+    {
+        std::vector<uint8_t> buffer;
+
+        if (!std::filesystem::exists(file_path))
+            return std::move(buffer);
+
+        std::ifstream file(file_path, std::ios::binary | std::ios::ate);
+        if (!file.is_open())
+            return std::move(buffer);
+
+        std::streamsize size = file.tellg();
+        if (size <= 0)
+            return std::move(buffer);
+
+        buffer.resize(static_cast<size_t>(size));
+        file.seekg(0, std::ios::beg);
+        file.read(reinterpret_cast<char*>(buffer.data()), size);
+
+        return std::move(buffer);
+    }
+
     static std::string NormaliseFilePathToString(const std::filesystem::path& file_path)
     {
         return file_path.generic_string();

@@ -4,6 +4,8 @@
 #include "Asset/Asset.h"
 #include "Core/GUID.h"
 
+#include "Util/Hash.h"
+
 // C++ Standard Library Headers
 #include <string>
 #include <vector>
@@ -61,18 +63,74 @@ namespace BC
 
 	};
 
+	struct Bone
+	{
+		std::string bone_name;
+		GUID bone_id;
+
+		glm::mat4 bone_offset_matrix;
+
+		StringHash parent_bone;
+		std::vector<StringHash> child_bones;
+	};
+
+	using BoneMap = std::unordered_map<StringHash, Bone>;
+
     class Skeleton : public Asset
     {
 
     public:
 
+		
+
         AssetType GetType() const override { return AssetType::Skeleton; }
 
-        BoneLayout* GetSkeletonLayout() { return &m_SkeletonLayout; }
+		const BoneMap& GetBoneMap() const { return m_BoneMap; }
+		void SetBoneMap(const BoneMap& bone_map) { m_BoneMap = bone_map; }
+
+		void AddBone(const Bone& bone, const std::string& parent_bone) { AddBone(bone, parent_bone.empty() ? NULL_GUID : Util::HashString(parent_bone)); }
+		void AddBone(const Bone& bone, StringHash parent_bone)
+		{
+			if (parent_bone == NULL_GUID)
+			{
+				BC_CORE_WARN("Skeleton::AddBone: Could Not Add Bone - Parent is NULL_GUID.");
+				return;
+			}
+		}
+		
+		void UpdateRootBone(const Bone& bone)
+		{
+			if (m_RootBone == NULL_GUID)
+			{
+				m_RootBone = Util::HashString(bone.bone_name);
+			}
+			else
+			{
+
+			}
+		}
+
+		void RemoveBone(const std::string& bone_name) { RemoveBone(Util::HashString(bone_name)); }
+		void RemoveBone(StringHash bone_hash)
+		{
+			if (bone_hash == NULL_GUID || !m_BoneMap.contains(bone_hash))
+				return;
+
+			for (auto& child_bone_hash : m_BoneMap[bone_hash].child_bones)
+			{
+				RemoveBone(child_bone_hash);
+			}
+			m_BoneMap.erase(bone_hash);
+		}
 
     private:
 
-		BoneLayout m_SkeletonLayout = {};
+		// Preserve Skeleton in Map to Avoid Recursion
+		// Key = String Hash of Bone Name
+		// Value = Bone
+		BoneMap m_BoneMap;
+
+		StringHash m_RootBone = NULL_GUID;
 
     };
 

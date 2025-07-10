@@ -904,6 +904,12 @@ namespace BC
 				return false;
 			}
 
+			if (data_source->Bounds == Bounds_AABB{})
+			{
+				data_source->Bounds.BoundsMin = { -1.0f, -1.0f, -1.0f };
+				data_source->Bounds.BoundsMax = {  1.0f,  1.0f,  1.0f };
+			}
+
 			int octree_growth_attempts = 0;
 			const int max_attempts = 20; // We are expanding to infinity if we even get close to this number....
 			std::array<Bounds_AABB, max_attempts> parent_node_bounding_region{};
@@ -1283,30 +1289,42 @@ namespace BC
                 {
 					if (data) 
                     {
+						if (data->Bounds.BoundsMin == glm::vec3(FLT_MAX) || 
+							data->Bounds.BoundsMax == glm::vec3(-FLT_MAX))
+							continue;
+
 						m_Config.InitialBounds.BoundsMin = glm::min(data->Bounds.BoundsMin, m_Config.InitialBounds.BoundsMin);
 						m_Config.InitialBounds.BoundsMax = glm::max(data->Bounds.BoundsMax, m_Config.InitialBounds.BoundsMax);
 					}
 				}
 
-				// Step 1: Calculate the initial center and extent
-				glm::vec3 center = m_Config.InitialBounds.Center();
-				glm::vec3 extent = m_Config.InitialBounds.BoundsMax - m_Config.InitialBounds.BoundsMin;
+				if (m_Config.InitialBounds.BoundsMin == glm::vec3(FLT_MAX) || 
+					m_Config.InitialBounds.BoundsMax == glm::vec3(-FLT_MAX))
+				{
+					m_Config.InitialBounds.BoundsMin = glm::vec3(-1000.0f);
+					m_Config.InitialBounds.BoundsMax = glm::vec3(1000.0f);
+				}
+				else
+				{
+					// Step 1: Calculate the initial center and extent
+					glm::vec3 center = m_Config.InitialBounds.Center();
+					glm::vec3 extent = m_Config.InitialBounds.BoundsMax - m_Config.InitialBounds.BoundsMin;
 
-				// Step 2: Find the largest extent to ensure the bounding box is a cube
-				float maxExtent = glm::compMax(extent);
+					// Step 2: Find the largest extent to ensure the bounding box is a cube
+					float maxExtent = glm::compMax(extent);
 
-				// Step 3: Create a cubic bounding box centered on the original center
-				glm::vec3 halfExtent = glm::vec3(maxExtent) * 0.5f;
+					// Step 3: Create a cubic bounding box centered on the original center
+					glm::vec3 halfExtent = glm::vec3(maxExtent) * 0.5f;
 
-				// Step 4: Adjust the bounds to make them uniform and cubic
-				m_Config.InitialBounds.BoundsMin = center - halfExtent;
-				m_Config.InitialBounds.BoundsMax = center + halfExtent;
+					// Step 4: Adjust the bounds to make them uniform and cubic
+					m_Config.InitialBounds.BoundsMin = center - halfExtent;
+					m_Config.InitialBounds.BoundsMax = center + halfExtent;
 
-				// Optional: Apply a scaling factor to add some padding around the entire scene
-				float scaleFactor = 1.1f;
-				m_Config.InitialBounds.BoundsMin *= scaleFactor;
-				m_Config.InitialBounds.BoundsMax *= scaleFactor;
-
+					// Optional: Apply a scaling factor to add some padding around the entire scene
+					float scaleFactor = 1.1f;
+					m_Config.InitialBounds.BoundsMin *= scaleFactor;
+					m_Config.InitialBounds.BoundsMax *= scaleFactor;
+				}
 			}
 			else 
             {

@@ -4,9 +4,9 @@
 namespace BC
 {
     
-	static std::map<std::filesystem::path, AssetType> s_AssetExtensionMap = {
-
-		{ ".prefab",	        AssetType::Prefab },
+	static std::map<std::filesystem::path, AssetType> s_AssetExtensionMap = 
+	{
+		{ ".prefab",	        AssetType::PrefabEntity },
 
 		{ ".png",		        AssetType::Texture2D },
 		{ ".jpg",		        AssetType::Texture2D },
@@ -15,15 +15,15 @@ namespace BC
 		{ ".tga",		        AssetType::Texture2D },
 		{ ".tif",		        AssetType::Texture2D },
 
-		{ ".obj",		        AssetType::Prefab },
-		{ ".fbx",		        AssetType::Prefab },
+		{ ".obj",		        AssetType::PrefabModel },
+		{ ".fbx",		        AssetType::PrefabModel },
 
 		{ ".animator",          AssetType::AnimationStateMachine },
 
 		{ ".mp3",		        AssetType::Audio },
 
-		{ ".material",	        AssetType::Material_Standard },
-		{ ".skybox",	        AssetType::Material_Skybox },
+		{ ".material",	        AssetType::Material },
+		{ ".skybox",	        AssetType::Skybox },
 
 		{ ".comp",		        AssetType::Compute_Shader },
 		{ ".compute",	        AssetType::Compute_Shader },
@@ -32,7 +32,6 @@ namespace BC
 
 		{ ".humanoid",		    AssetType::Humanoid },
 		{ ".humanoidmask",	    AssetType::HumanoidMask }
-
 	};
 
 
@@ -68,9 +67,13 @@ namespace BC
 	{
 		switch (asset_type) 
         {
-			case AssetType::Prefab:
-			case AssetType::Material_Skybox:
-			case AssetType::Material_Standard:
+			case AssetType::PrefabEntity:
+			case AssetType::PrefabModel:
+			case AssetType::TextureCubeMap:
+
+			case AssetType::Skybox:
+			case AssetType::Material:
+
 			case AssetType::AnimationStateMachine:
 			{
 				return true;

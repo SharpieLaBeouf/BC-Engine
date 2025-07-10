@@ -27,11 +27,11 @@ namespace BC
         Scene(const std::filesystem::path& scene_file_path);
         ~Scene();
 
-        Scene(const Scene& other);
-        Scene(Scene&& other);
+        Scene(const Scene& other) = delete;
+        Scene(Scene&& other) = default;
 
-        Scene& operator=(const Scene& other);
-        Scene& operator=(Scene&& other);
+        Scene& operator=(const Scene& other) = delete;
+        Scene& operator=(Scene&& other) = default;
 
 		Entity CreateEntity(const std::string& name = "", GUID parent_guid = NULL_GUID);
 		Entity CreateEntity(GUID entity_guid, const std::string& name = "", GUID parent_guid = NULL_GUID);

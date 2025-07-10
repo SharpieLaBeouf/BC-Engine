@@ -261,7 +261,7 @@ namespace BC
             return;
 
 		// Update Bone Hierarchy of Skeleton
-		UpdateBoneHierarchy(*asset_skeleton->GetSkeletonLayout(), asset_skeleton, *skinned_mesh_component.GetBoneMapping(), *animation_clip_asset.get(), m_CurrentTime);
+		//UpdateBoneHierarchy(*asset_skeleton->GetSkeletonLayout(), asset_skeleton, *skinned_mesh_component.GetBoneMapping(), *animation_clip_asset.get(), m_CurrentTime);
     }
 
     std::unordered_map<GUID, glm::mat4> SimpleAnimationComponent::UpdateDeferred()
@@ -308,7 +308,7 @@ namespace BC
 		std::unordered_map<GUID, glm::mat4> transform_update_map;
 		transform_update_map.reserve(skinned_mesh_component.GetBoneMapping()->size());
 		// Update Bone Hierarchy of Skeleton
-		UpdateBoneHierarchyDeferred(transform_update_map, *asset_skeleton->GetSkeletonLayout(), asset_skeleton, *skinned_mesh_component.GetBoneMapping(), *animation_clip_asset.get(), m_CurrentTime);
+		//UpdateBoneHierarchyDeferred(transform_update_map, *asset_skeleton->GetSkeletonLayout(), asset_skeleton, *skinned_mesh_component.GetBoneMapping(), *animation_clip_asset.get(), m_CurrentTime);
 		return transform_update_map;
     }
 

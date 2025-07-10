@@ -16,6 +16,12 @@
 
 using namespace physx;
 
+namespace YAML
+{
+    class Emitter;
+    class Node;
+}
+
 namespace BC
 {
 
@@ -189,6 +195,19 @@ namespace BC
 		void SetDynamicFriction(float dynamic_friction) { m_DynamicFriction = dynamic_friction; }
 		void SetStaticFriction(float static_friction) { m_StaticFriction = static_friction; }
 		void SetBounciness(float bounciness) { m_Bounciness = bounciness; }
+
+        
+        void SerialiseAsset(YAML::Emitter& out)
+        {
+
+        }
+
+        void DeserialiseAsset(const YAML::Node& data)
+        {
+
+        }
+
+        static std::shared_ptr<PhysicsMaterial> CreatePhysicsMaterial(const std::string& serialised_physics_material_data);
 
     private:
 

@@ -91,7 +91,7 @@ namespace BC
 
         void LookAt(const glm::vec3& target_position);
 
-        void SetMatrix(const glm::mat4& new_matrix, bool global = false);
+        void SetMatrix(const glm::mat4& new_matrix, bool global = false, bool update_hierarchy = true);
 
     #pragma endregion
     

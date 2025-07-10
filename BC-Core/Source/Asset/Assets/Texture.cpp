@@ -7,8 +7,11 @@
 
 #include "Graphics/Vulkan/VulkanUtil.h"
 
+#include "Util/FileUtil.h"
+
 namespace BC
 {
+    
     Texture2D::~Texture2D()
     {
         auto device = Application::GetVulkanCore()->GetLogicalDevice();
@@ -119,64 +122,14 @@ namespace BC
         if (!std::filesystem::exists(texture_path))
             return nullptr;
 
-		int width, height, channels;
-		stbi_set_flip_vertically_on_load(true);
-		unsigned char* data = stbi_load(texture_path.string().c_str(), &width, &height, &channels, 0);
-
-        if (width == 0 || height == 0 || channels == 0)
-        {
-            stbi_image_free(data);
-            return nullptr;
-        }
-
-        Texture2DSpecification specification = {};
-        specification.width = width;
-        specification.height = height;
-
-        switch (channels)
-        {
-            case 1:     specification.format    = VK_FORMAT_R8_UNORM;           break;
-            case 2:     specification.format    =  VK_FORMAT_R8G8_UNORM;        break;
-            case 3:     specification.format    = VK_FORMAT_R8G8B8_UNORM;       break;
-            case 4:     specification.format    = VK_FORMAT_R8G8B8A8_UNORM;     break;
-            default:    specification.format    = VK_FORMAT_UNDEFINED;          break;
-        }
-
-        if (specification.format == VK_FORMAT_UNDEFINED)
-        {
-            stbi_image_free(data);
-            return nullptr;
-        }
-
-        specification.generate_mips = true;
-        specification.mip_levels = std::max(width, height);
-        specification.mip_levels = specification.mip_levels > 1
-            ? static_cast<uint32_t>(std::floor(std::log2(specification.mip_levels))) + 1
-            : 1;
-        specification.mip_levels = std::min(specification.mip_levels, 5u);
-
-        std::shared_ptr<Texture2D> texture = std::make_shared<Texture2D>();
-        texture->m_Specification = specification;
-
-        if (cache_data_cpu)
-        {
-            uint32_t channels = GetChannelsFromFormat(specification.format);
-            uint32_t bpc = GetBytesPerChannel(specification.format);
-            auto data_size = specification.width * specification.height * channels * bpc;
-            texture->m_CachedData.resize(data_size);
-            texture->m_CachedDataFormat = specification.format;
-            memcpy(texture->m_CachedData.data(), data, data_size);
-        }
-
+        std::shared_ptr<Texture2D> texture_asset = nullptr;
         BC_CATCH_BEGIN();
 
-        texture->CreateTexture(data, specification.format);
+        texture_asset = Texture2D::CreateTextureFromFileBytes(Util::LoadDataStreamFromFile(texture_path), cache_data_cpu);
 
         BC_CATCH_END_RETURN(nullptr);
 
-        stbi_image_free(data);
-
-        return texture;
+        return texture_asset;
     }
 
     std::shared_ptr<Texture2D> Texture2D::CreateTexture(const Texture2DSpecification& specification, const unsigned char* texture_data_in, VkFormat texture_data_in_format, bool cache_data_cpu)
@@ -202,6 +155,70 @@ namespace BC
         texture->CreateTexture(texture_data_in, texture_data_in_format);
 
         BC_CATCH_END_RETURN(nullptr);
+
+        return texture;
+    }
+
+    std::shared_ptr<Texture2D> Texture2D::CreateTextureFromFileBytes(const std::vector<uint8_t>& texture_file_bytes, bool cache_cpu_data)
+    {
+        unsigned char* image_data = nullptr;
+        std::shared_ptr<Texture2D> texture = nullptr;
+
+        BC_CATCH_BEGIN();
+
+        int width, height, file_channels;
+        if (!stbi_info_from_memory(texture_file_bytes.data(), static_cast<int>(texture_file_bytes.size()), &width, &height, &file_channels))
+            return nullptr;
+
+        if (width == 0 || height == 0 || file_channels == 0)
+            return nullptr;
+
+        int desired_channels = (file_channels == 3) ? 4 : 0;
+        int actual_channels = 0;
+
+        stbi_set_flip_vertically_on_load(true);
+        image_data = stbi_load_from_memory(
+            texture_file_bytes.data(),
+            static_cast<int>(texture_file_bytes.size()),
+            &width,
+            &height,
+            &actual_channels,
+            desired_channels
+        );
+
+        if (!image_data || width == 0 || height == 0 || actual_channels == 0)
+            return nullptr;
+
+        Texture2DSpecification specification = {};
+        specification.width = width;
+        specification.height = height;
+
+        switch (actual_channels)
+        {
+            case 1: specification.format = VK_FORMAT_R8_UNORM; break;
+            case 2: specification.format = VK_FORMAT_R8G8_UNORM; break;
+            case 3: specification.format = VK_FORMAT_R8G8B8_UNORM; break; // Shouldn't technically hit as we force 4 if 3 channels
+            case 4: specification.format = VK_FORMAT_R8G8B8A8_UNORM; break;
+            default: specification.format = VK_FORMAT_UNDEFINED; break;
+        }
+
+        if (specification.format == VK_FORMAT_UNDEFINED)
+        {
+            stbi_image_free(image_data);
+            return nullptr;
+        }
+
+        specification.generate_mips = true;
+        specification.mip_levels = std::max(width, height);
+        specification.mip_levels = specification.mip_levels > 1
+            ? static_cast<uint32_t>(std::floor(std::log2(specification.mip_levels))) + 1
+            : 1;
+        specification.mip_levels = std::min(specification.mip_levels, 5u);
+
+        texture = Texture2D::CreateTexture(specification, image_data, specification.format, false);
+        stbi_image_free(image_data);
+
+        BC_CATCH_END_FUNC([&]() { texture.reset(); texture = nullptr; if (image_data) stbi_image_free(image_data); });
 
         return texture;
     }
@@ -361,4 +378,5 @@ namespace BC
 
         return m_ImageDescriptor;
     }
+
 }

@@ -360,6 +360,11 @@ namespace BC
 		}
     }
 
+    void SkinnedMeshRendererComponent::CalculatePrefabBindPoseBoneTransformations(std::shared_ptr<Prefab> model_prefab)
+    {
+        
+    }
+
 #pragma endregion
 
 }

@@ -554,7 +554,7 @@ namespace BC
         SetForwardDirection(forward);
     }
     
-    void TransformComponent::SetMatrix(const glm::mat4& new_matrix, bool global)
+    void TransformComponent::SetMatrix(const glm::mat4& new_matrix, bool global, bool update_hierarchy)
     {
         if (global)
         {
@@ -601,9 +601,11 @@ namespace BC
             m_LocalOrientation = glm::normalize(orientation);
             m_LocalEulerHint   = glm::degrees(glm::eulerAngles(m_LocalOrientation));
 
-            AddFlag(TransformFlag_PropertiesUpdated);
-
-            UpdateLocalMatrix(true);
+            if (update_hierarchy)
+            {
+                AddFlag(TransformFlag_PropertiesUpdated);
+                UpdateLocalMatrix(true);
+            }
         }
     }
     

@@ -3,6 +3,7 @@
 // ---- Asset ----
 #include "Asset/Asset.h"
 #include "Asset/AssetManager.h"
+#include "Asset/AssetImporter.h"
 #include "Asset/AssetManagerAPI.h"
 
 #include "Asset/Assets/Material.h"
@@ -73,6 +74,9 @@
 #include "Project/Scene/Components/PhysicsComponents.h"
 
 // ---- Scripting ----
+#include "Scripting/ScriptDefines.h"
+#include "Scripting/ScriptManager.h"
+#include "Scripting/ScriptRegister.h"
 
 // ---- Util ----
 #include "Util/FileUtil.h"

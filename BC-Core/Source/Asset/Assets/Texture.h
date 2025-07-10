@@ -87,8 +87,11 @@ namespace BC
         // ---- Static ----
         static uint32_t GetChannelsFromFormat(VkFormat format);
         static uint32_t GetBytesPerChannel(VkFormat format);
+
         static std::shared_ptr<Texture2D> CreateTexture(const std::filesystem::path& texture_path, bool cache_data_cpu = false);
         static std::shared_ptr<Texture2D> CreateTexture(const Texture2DSpecification& specification, const unsigned char* texture_data_in = nullptr, VkFormat texture_data_in_format = VK_FORMAT_UNDEFINED, bool cache_data_cpu = false);
+        
+        static std::shared_ptr<Texture2D> CreateTextureFromFileBytes(const std::vector<uint8_t>& texture_file_bytes, bool cache_cpu_data = false);
 
     private:
 
@@ -110,4 +113,24 @@ namespace BC
 
     };
 
+    class TextureCubeMap : public Asset
+    {
+
+    public:
+
+        AssetType GetType() const override { return AssetType::Texture2D; }
+
+        void SerialiseAsset(YAML::Emitter& out)
+        {
+
+        }
+
+        void DeserialiseAsset(const YAML::Node& data)
+        {
+
+        }
+        
+        static std::shared_ptr<TextureCubeMap> CreateTextureCubeMap(const std::string& serialised_cube_map_data);
+
+    };
 }
