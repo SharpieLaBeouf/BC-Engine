@@ -5,6 +5,8 @@
 #include "Swapchain.h"
 #include "RenderCommand.h"
 
+#include "Util/Platform.h"
+
 #include "Graphics/Renderer/LightEnvironment.h"
 
 // C++ Standard Library Headers
@@ -17,7 +19,11 @@
 
 // External Vendor Library Headers
 #include <vulkan/vulkan.h>
+#if defined(BC_PLATFORM_WINDOWS)
 #include <vma/vk_mem_alloc.h>
+#elif defined(BC_PLATFORM_LINUX)
+#include <vk_mem_alloc.h>
+#endif
 
 typedef struct GLFWwindow GLFWwindow;
 
