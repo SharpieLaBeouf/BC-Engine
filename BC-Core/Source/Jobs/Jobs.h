@@ -35,13 +35,13 @@ namespace BC
         ~JobCounter() = default;
         
         JobCounter(const JobCounter& other) = delete;
-        JobCounter(JobCounter&& other)
+        JobCounter(JobCounter&& other) noexcept
         {
             m_Count.store(other.m_Count.load()); other.m_Count.store(0);
         }
         
         JobCounter& operator=(const JobCounter& other) = delete;
-        JobCounter& operator=(JobCounter&& other)
+        JobCounter& operator=(JobCounter&& other) noexcept
         {
             if (this == &other)
                 return *this;

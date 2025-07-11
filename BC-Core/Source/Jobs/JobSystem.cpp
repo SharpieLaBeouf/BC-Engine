@@ -152,10 +152,12 @@ namespace BC
             std::lock_guard<std::mutex> lock(m_ProfileMutex);
             m_ProfilingActive = false;
             m_CurrentFrameProfile.frame_duration = std::chrono::duration<double, std::milli>(frame_end - m_CurrentFrameProfile.frame_start).count();
+
+            if (m_FrameProfiles.size() >= 100)
+                m_FrameProfiles.pop_front();
+
             m_FrameProfiles.push_back(m_CurrentFrameProfile);
 
-            if (m_FrameProfiles.size() > 100)
-                m_FrameProfiles.pop_front();
         }
     }
     

@@ -101,11 +101,6 @@ namespace BC
                 {
 					std::filesystem::path entry_path = entry.path();
 
-					if (Util::FilePathContains(entry_path, "Scripts/Bin") 			 ||
-						Util::FilePathContains(entry_path, "Scripts/Generated") 	 ||
-						Util::FilePathContains(entry_path, "Scripts/ScriptCoreAPI")	)
-						continue;
-
 					if (entry.is_directory() && !Util::IsPathHidden(entry.path())) 
                     {
 						bool is_leaf_node = !Util::PathHasSubDirectory(entry_path);
@@ -134,7 +129,7 @@ namespace BC
 							SetCurrentDirectory(entry_path);
 						}
 
-						if (tree_node_opened) 
+						if (tree_node_opened)
                         {
 							if (!recursive_directory_display(entry_path))
 							{
@@ -163,36 +158,8 @@ namespace BC
 
 				ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 				flags |= GetCurrentDirectory() == side_bar_root_path ? ImGuiTreeNodeFlags_Selected : 0;
-
-				if (i != 2)
-				{
-					flags |= Util::PathHasSubDirectory(side_bar_root_path) ? ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_Leaf;
-				}
-				else
-				{
-					// Ensure Correct Tree Node Flags Set - this ensures that
-					// any folders that are deemed "excluded" are not included
-					// in the side bar
-					bool only_excluded = true;
-					for (const auto& entry : std::filesystem::directory_iterator(side_bar_root_path))
-					{
-						if (!entry.is_directory())
-							continue;
-
-						auto& path = entry.path();
-						if (Util::FilePathContains(path, "Scripts/Bin") 			||
-							Util::FilePathContains(path, "Scripts/Generated") 	 	||
-							Util::FilePathContains(path, "Scripts/ScriptCoreAPI")	)
-							{
-								continue;
-							}
-						only_excluded = false;
-						break;
-					}
-
-					flags |= only_excluded ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-				}
-
+				flags |= Util::PathHasSubDirectory(side_bar_root_path) ? ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_Leaf;
+				
 				bool folder_opened = ImGui::TreeNodeEx(side_bar_root_path.filename().string().c_str(), flags);
 				
 				if (DirectoryFolderDropTarget(side_bar_root_path))
@@ -277,6 +244,12 @@ namespace BC
 
     void ContentBrowserPanel::DrawContentBrowser()
     {
+		if (!std::filesystem::exists(GetCurrentDirectory()))
+		{
+			SetCurrentDirectory(Application::GetProject()->GetDirectory() / "Assets");
+			BC_THROW(std::filesystem::exists(GetCurrentDirectory()), "ContentBrowserPanel::DrawContentBrowser: Tried to Reset Current Directory.");
+		}
+
 		if (ImGui::BeginChild("File Browser", {}, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle)) {
 
 			float available_width = ImGui::GetContentRegionAvail().x;

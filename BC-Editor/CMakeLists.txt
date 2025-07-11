@@ -7,6 +7,10 @@ file(GLOB_RECURSE APP_SRC
 
 add_executable(BCEngineEditor ${APP_SRC})
 
+set_target_properties(BCEngineEditor PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/BC-Editor"
+)
+
 # Compile Options and Definitions
 if(ENABLE_IPO)
     set_property(TARGET BCEngineEditor PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)

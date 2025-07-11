@@ -66,14 +66,6 @@ namespace BC::Util
         return !rel.empty() && *rel.begin() != "..";
     }
 
-    static bool PathHasSubDirectory(const std::filesystem::path& directory_path) 
-    {
-        for (const auto& entry : std::filesystem::directory_iterator(directory_path))
-            if (entry.path().parent_path() == directory_path && entry.is_directory())
-                return true;
-        return false;
-    }
-
     static bool IsPathHidden(const std::filesystem::path& p)
     {
         #if defined(BC_PLATFORM_WINDOWS)
@@ -95,6 +87,23 @@ namespace BC::Util
             return false;
 
         #endif
+    }
+
+    static bool PathHasSubDirectory(const std::filesystem::path& directory_path) 
+    {
+        for (const auto& entry : std::filesystem::directory_iterator(directory_path))
+        {
+            if (!entry.is_directory())
+                continue;
+
+            const auto& path = entry.path();
+
+            if (IsPathHidden(path))
+                continue;
+
+            return true; // Found a visible subdirectory
+        }
+        return false;
     }
 
     static std::string OpenFile(const char* filter, const std::filesystem::path& initial_dir = "")
@@ -213,9 +222,8 @@ namespace BC::Util
 
         // Convert the WCHAR path to std::string using WideCharToMultiByte
         int size_needed = WideCharToMultiByte(CP_UTF8, 0, pszFolderPath, -1, NULL, 0, NULL, NULL);
-        std::string strFolderPath(size_needed, 0);
+        std::string strFolderPath(size_needed - 1, 0); // Exclude null terminator
         WideCharToMultiByte(CP_UTF8, 0, pszFolderPath, -1, &strFolderPath[0], size_needed, NULL, NULL);
-
 
         // Clean up
         CoTaskMemFree(pszFolderPath);

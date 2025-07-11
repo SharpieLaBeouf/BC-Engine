@@ -88,6 +88,13 @@ namespace BC
 
 		void SetProject(std::unique_ptr<Project> project)
 		{
+			if (!project)
+				return;
+
+			m_Project->GetSceneManager()->OnStop();
+			m_Project.reset();
+			m_Project = nullptr;
+			
 			m_Project = std::move(project);
 		}
 

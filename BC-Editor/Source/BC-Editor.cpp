@@ -201,6 +201,28 @@ namespace BC
 						if (ImGui::MenuItem("New Project")) 
 						{
 							// TODO: Implement
+							std::filesystem::path project_directory = Util::OpenDirectory();
+							std::filesystem::path project_file = project_directory / (project_directory.filename().string() + ".project");
+							auto new_project = Project::NewProject(project_file, true);
+
+							if (new_project)
+							{
+								auto current_project = Application::GetProject();
+								if (current_project && current_project->GetSceneManager())
+								{
+									current_project->GetSceneManager()->SaveAllScenes();
+								}
+								Application::Get()->SetProject(std::move(new_project));
+								Application::Get()->SetScriptManager(std::move(std::make_unique<ScriptManager>()));
+
+								auto content_browser_panel = GetPanel<ContentBrowserPanel>();
+								if (content_browser_panel)
+								{
+									content_browser_panel->SetCurrentDirectory(project_directory / "Assets");
+								}
+
+								Application::GetProject()->SaveProject();
+							}
 						}
 
 						if (ImGui::MenuItem("New Scene", "Ctrl+N"))

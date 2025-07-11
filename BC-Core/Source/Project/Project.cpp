@@ -15,9 +15,14 @@ namespace BC
         std::filesystem::create_directories(project_directory / "Scenes");
         std::filesystem::create_directories(project_directory / "Scripts");
 
-        std::filesystem::create_directories(project_directory / "Scripts/Bin");
-        std::filesystem::create_directories(project_directory / "Scripts/Generated");
-        std::filesystem::create_directories(project_directory / "Scripts/ScriptCoreAPI");
+        std::filesystem::create_directories(project_directory / "Scripts/.EngineInternals");
+        std::filesystem::create_directories(project_directory / "Scripts/.EngineInternals/Bin");
+        std::filesystem::create_directories(project_directory / "Scripts/.EngineInternals/Generated");
+        std::filesystem::create_directories(project_directory / "Scripts/.EngineInternals/ScriptCoreAPI");
+
+        #if defined(BC_PLATFORM_WINDOWS)
+        SetFileAttributesW((project_directory / "Scripts/.EngineInternals").wstring().c_str(), FILE_ATTRIBUTE_HIDDEN);
+        #endif
     }
 
     std::unique_ptr<Project> Project::NewProject(const std::filesystem::path& project_file_path, bool editor)

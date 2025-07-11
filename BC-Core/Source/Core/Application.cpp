@@ -139,10 +139,14 @@ namespace BC
             // 5. SwapChain Rendering
             if (!m_Minimised)
             {
+
                 m_VulkanCore->BeginFrame();
 
                 {
                     BC_PROFILE_SCOPE("Application::Run: GUI Update Loop");
+
+                    BC_CATCH_BEGIN(); // --> Catch ImGui Errors
+
                     m_GUILayer->Begin();
 
                     for (Layer* layer : *m_LayerStack) 
@@ -152,6 +156,9 @@ namespace BC
 
                     m_VulkanCore->BeginSwapchainRenderPass();
                     m_GUILayer->End();
+
+                    BC_CATCH_END(); // --> Catch ImGui Errors
+
                     m_VulkanCore->EndSwapchainRenderPass();
                 }
 
@@ -162,7 +169,10 @@ namespace BC
                 }
 
                 // Submit ImGui to Swapchain Image, Present Swapchain Image, Wrapped Increment Frame Index
-                m_VulkanCore->EndFrame();
+                {
+                    BC_PROFILE_SCOPE("Application::Run: End Frame (Swap Queue Submit & Present).");
+                    m_VulkanCore->EndFrame();
+                }
             }
             else
             {
