@@ -699,23 +699,26 @@ namespace BC
 
         ImGui::TreePop();
 
-        Application::Get()->SubmitToMainThread([&]()
+        if (m_SourceDragDropEntity && m_SourceDragDropEntity != m_TargetDragDropEntity)
         {
-            // TODO: Check if Entity's Scenes Are the Same -> IF NOT WE NEED TO MOVE ONE ENTITY FROM ONE SCENE TO THE OTHER, THEN PARENT FROM
-            if (m_SourceDragDropEntity && m_SourceDragDropEntity != m_TargetDragDropEntity)
+            Application::Get()->SubmitToMainThread([source_entity = m_SourceDragDropEntity, target_entity = m_TargetDragDropEntity]()
             {
-                if (m_TargetDragDropEntity)
+                // TODO: Check if Entity's Scenes Are the Same -> IF NOT WE NEED TO MOVE ONE ENTITY FROM ONE SCENE TO THE OTHER, THEN PARENT FROM
+                if (source_entity && source_entity != target_entity)
                 {
-                    m_SourceDragDropEntity.GetComponent<MetaComponent>().AttachParent(m_TargetDragDropEntity.GetGUID());
+                    if (target_entity)
+                    {
+                        source_entity.GetComponent<MetaComponent>().AttachParent(target_entity.GetGUID());
+                    }
+                    else
+                    {
+                        source_entity.GetComponent<MetaComponent>().DetachParent();
+                    }
                 }
-                else
-                {
-                    m_SourceDragDropEntity.GetComponent<MetaComponent>().DetachParent();
-                }
-                m_SourceDragDropEntity = {};
-                m_TargetDragDropEntity = {};
-            }
-        });
+            });
+            m_SourceDragDropEntity = {};
+            m_TargetDragDropEntity = {};
+        }
     }
 
 }
