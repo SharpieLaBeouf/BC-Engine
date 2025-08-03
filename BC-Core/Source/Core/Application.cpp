@@ -215,7 +215,7 @@ namespace BC
         m_JobSystem->Shutdown();
         m_JobSystem.reset();
 
-        vkDeviceWaitIdle(m_VulkanCore->GetLogicalDevice());
+        m_VulkanCore->GetLogicalDevice().waitIdle();
 
         SceneRenderer::Shutdown();
     }
@@ -428,8 +428,8 @@ namespace BC
 
         // 3. Update Vulkan Swapchain
         m_VulkanCore->ResizeSwapchain(swapchain_spec);
-        
-        BC_CORE_TRACE("Application::ResizeSwapchain: Resized Swapchain Successfully - X:{}, Y:{}.", swapchain_spec.Extent.width, swapchain_spec.Extent.height);
+
+        BC_CORE_TRACE("Application::ResizeSwapchain: Resized Swapchain Successfully - X:{}, Y:{}.", swapchain_spec.extent.width, swapchain_spec.extent.height);
     }
 
 }

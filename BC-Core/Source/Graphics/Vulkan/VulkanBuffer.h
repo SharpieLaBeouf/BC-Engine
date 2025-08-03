@@ -2,9 +2,7 @@
 
 #include "Util/Platform.h"
 
-#include <vulkan/vulkan.h>
-
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 #if defined(BC_PLATFORM_WINDOWS)
 #include <vma/vk_mem_alloc.h>
 #elif defined(BC_PLATFORM_LINUX)
@@ -25,8 +23,8 @@ namespace BC
 		VulkanBuffer() = default;
 
 		VulkanBuffer(VmaAllocator allocator,
-		             VkDeviceSize size,
-		             VkBufferUsageFlags usage,
+		             vk::DeviceSize size,
+		             vk::BufferUsageFlags usage,
 		             VmaMemoryUsage memory_usage,
 		             VmaAllocationCreateFlags alloc_flags = 0);
 
@@ -41,20 +39,23 @@ namespace BC
 		VulkanBuffer& operator=(VulkanBuffer&& other) noexcept;
 
 		// Upload data (must be host-visible or staging buffer used externally)
-		void Upload(const void* data, VkDeviceSize size, VkDeviceSize offset = 0);
+		void Upload(const void* data, vk::DeviceSize size, vk::DeviceSize offset = 0);
 
 		// Map/unmap
+		bool IsHostVisible() const;
 		void* Map();
 		void Unmap();
 
 		// Accessors
-		VkBuffer GetBuffer() const { return m_Buffer; }
+		const vk::Buffer& GetBuffer() const { return m_Buffer; }
+		vk::Buffer& GetBuffer() { return m_Buffer; }
+
 		VmaAllocation GetAllocation() const { return m_Allocation; }
-		VkDeviceSize GetSize() const { return m_Size; }
+		vk::DeviceSize GetSize() const { return m_Size; }
 
 		bool IsMapped() const { return m_MappedPtr != nullptr; }
 
-	    VulkanBuffer Clone(VkCommandPool cmd_pool, VkQueue queue, VkBufferUsageFlags usage) const;
+	    VulkanBuffer Clone(vk::BufferUsageFlags usage, VmaMemoryUsage memory_usage) const;
 
 	private:
 
@@ -63,9 +64,11 @@ namespace BC
 	private:
 
 		VmaAllocator m_Allocator = nullptr;
-		VkBuffer m_Buffer = VK_NULL_HANDLE;
 		VmaAllocation m_Allocation = nullptr;
-		VkDeviceSize m_Size = 0;
+
+		vk::Buffer m_Buffer = VK_NULL_HANDLE;
+		vk::DeviceSize m_Size = 0;
+		
 		void* m_MappedPtr = nullptr;
 	};
 }

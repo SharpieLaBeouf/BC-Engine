@@ -14,80 +14,61 @@ namespace BC
     
     Texture2D::~Texture2D()
     {
-        auto device = Application::GetVulkanCore()->GetLogicalDevice();
+        auto vma_allocator = Application::GetVulkanCore()->GetAllocator();
 
-        if (m_ImageDescriptor != VK_NULL_HANDLE)
-        {
-            // Descriptor sets allocated from a pool with VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
-            vkFreeDescriptorSets(device, Application::GetVulkanCore()->GetStaticDescriptorPool(), 1, &m_ImageDescriptor);
-            m_ImageDescriptor = VK_NULL_HANDLE;
-        }
+        m_ImageView.reset();
+        m_Sampler.reset();
+        m_ImageDescriptorSet.reset();
 
-        if (m_Sampler != VK_NULL_HANDLE)
+        // Destroy image and allocation with VMA
+        if (m_Image && m_ImageAllocation)
         {
-            vkDestroySampler(device, m_Sampler, nullptr);
-            m_Sampler = VK_NULL_HANDLE;
-        }
-
-        if (m_ImageView != VK_NULL_HANDLE)
-        {
-            vkDestroyImageView(device, m_ImageView, nullptr);
-            m_ImageView = VK_NULL_HANDLE;
-        }
-
-        if (m_Image != VK_NULL_HANDLE)
-        {
-            vkDestroyImage(device, m_Image, nullptr);
+            vmaDestroyImage(vma_allocator, m_Image, m_ImageAllocation);
             m_Image = VK_NULL_HANDLE;
-        }
-
-        if (m_ImageMemory != VK_NULL_HANDLE)
-        {
-            vkFreeMemory(device, m_ImageMemory, nullptr);
-            m_ImageMemory = VK_NULL_HANDLE;
+            m_ImageAllocation = nullptr;
         }
     }
 
-    uint32_t Texture2D::GetChannelsFromFormat(VkFormat format)
+    uint32_t Texture2D::GetChannelsFromFormat(vk::Format format)
     {
         switch (format)
         {
-            case VK_FORMAT_R8_UNORM:
-            case VK_FORMAT_R8_SRGB:
-            case VK_FORMAT_R8_UINT:
-            case VK_FORMAT_R8_SINT:
+            case vk::Format::eR8Unorm:
+            case vk::Format::eR8Srgb:
+            case vk::Format::eR8Uint:
+            case vk::Format::eR8Sint:
                 return 1;
 
-            case VK_FORMAT_R8G8_UNORM:
-            case VK_FORMAT_R8G8_SRGB:
-            case VK_FORMAT_R8G8_UINT:
-            case VK_FORMAT_R8G8_SINT:
+            case vk::Format::eR8G8Unorm:
+            case vk::Format::eR8G8Srgb:
+            case vk::Format::eR8G8Uint:
+            case vk::Format::eR8G8Sint:
                 return 2;
 
-            case VK_FORMAT_R8G8B8_UNORM:
-            case VK_FORMAT_R8G8B8_SRGB:
-            case VK_FORMAT_R8G8B8_UINT:
-            case VK_FORMAT_R8G8B8_SINT:
-            case VK_FORMAT_B8G8R8_UNORM:
-            case VK_FORMAT_B8G8R8_SRGB:
-            case VK_FORMAT_B8G8R8_UINT:
-            case VK_FORMAT_B8G8R8_SINT:
+            case vk::Format::eR8G8B8Unorm:
+            case vk::Format::eR8G8B8Srgb:
+            case vk::Format::eR8G8B8Uint:
+            case vk::Format::eR8G8B8Sint:
+            case vk::Format::eB8G8R8Unorm:
+            case vk::Format::eB8G8R8Srgb:
+            case vk::Format::eB8G8R8Uint:
+            case vk::Format::eB8G8R8Sint:
                 return 3;
 
-            case VK_FORMAT_R8G8B8A8_UNORM:
-            case VK_FORMAT_R8G8B8A8_SRGB:
-            case VK_FORMAT_R8G8B8A8_UINT:
-            case VK_FORMAT_R8G8B8A8_SINT:
-            case VK_FORMAT_B8G8R8A8_UNORM:
-            case VK_FORMAT_B8G8R8A8_SRGB:
-            case VK_FORMAT_B8G8R8A8_UINT:
-            case VK_FORMAT_B8G8R8A8_SINT:
+            case vk::Format::eR8G8B8A8Unorm:
+            case vk::Format::eR8G8B8A8Srgb:
+            case vk::Format::eR8G8B8A8Uint:
+            case vk::Format::eR8G8B8A8Sint:
+            case vk::Format::eB8G8R8A8Unorm:
+            case vk::Format::eB8G8R8A8Srgb:
+            case vk::Format::eB8G8R8A8Uint:
+            case vk::Format::eB8G8R8A8Sint:
                 return 4;
 
-            case VK_FORMAT_D32_SFLOAT:
-            case VK_FORMAT_D16_UNORM:
-            case VK_FORMAT_D24_UNORM_S8_UINT:
-            case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            case vk::Format::eD32Sfloat:
+            case vk::Format::eD16Unorm:
+            case vk::Format::eD24UnormS8Uint:
+            case vk::Format::eD32SfloatS8Uint:
                 return 1; // Depth formats, treated as 1 channel
 
             default:
@@ -96,22 +77,22 @@ namespace BC
         return 0;
     }
 
-    uint32_t Texture2D::GetBytesPerChannel(VkFormat format)
+    uint32_t Texture2D::GetBytesPerChannel(vk::Format format)
     {
         switch (format)
         {
-            case VK_FORMAT_R8_UNORM:
-            case VK_FORMAT_R8G8B8A8_UNORM:
-            case VK_FORMAT_R8G8_UNORM:
-            case VK_FORMAT_R8G8B8_UNORM:
+            case vk::Format::eR8Unorm:
+            case vk::Format::eR8G8B8A8Unorm:
+            case vk::Format::eR8G8Unorm:
+            case vk::Format::eR8G8B8Unorm:
                 return 1;
 
-            case VK_FORMAT_R16_SFLOAT:
-            case VK_FORMAT_R16G16B16A16_SFLOAT:
+            case vk::Format::eR16Sfloat:
+            case vk::Format::eR16G16B16A16Sfloat:
                 return 2;
 
-            case VK_FORMAT_R32_SFLOAT:
-            case VK_FORMAT_R32G32B32A32_SFLOAT:
+            case vk::Format::eR32Sfloat:
+            case vk::Format::eR32G32B32A32Sfloat:
                 return 4;
         }
         return 1;
@@ -132,7 +113,7 @@ namespace BC
         return texture_asset;
     }
 
-    std::shared_ptr<Texture2D> Texture2D::CreateTexture(const Texture2DSpecification& specification, const unsigned char* texture_data_in, VkFormat texture_data_in_format, bool cache_data_cpu)
+    std::shared_ptr<Texture2D> Texture2D::CreateTexture(const Texture2DSpecification& specification, const unsigned char* texture_data_in, vk::Format texture_data_in_format, bool cache_data_cpu)
     {
         if (!texture_data_in || specification.width == 0 || specification.height == 0 || GetChannelsFromFormat(texture_data_in_format) == 0)
             return nullptr;
@@ -195,14 +176,14 @@ namespace BC
 
         switch (actual_channels)
         {
-            case 1: specification.format = VK_FORMAT_R8_UNORM; break;
-            case 2: specification.format = VK_FORMAT_R8G8_UNORM; break;
-            case 3: specification.format = VK_FORMAT_R8G8B8_UNORM; break; // Shouldn't technically hit as we force 4 if 3 channels
-            case 4: specification.format = VK_FORMAT_R8G8B8A8_UNORM; break;
-            default: specification.format = VK_FORMAT_UNDEFINED; break;
+            case 1: specification.format = vk::Format::eR8Unorm; break;
+            case 2: specification.format = vk::Format::eR8G8Unorm; break;
+            case 3: specification.format = vk::Format::eR8G8B8Unorm; break; // Shouldn't technically hit as we force 4 if 3 channels
+            case 4: specification.format = vk::Format::eR8G8B8A8Unorm; break;
+            default: specification.format = vk::Format::eUndefined; break;
         }
 
-        if (specification.format == VK_FORMAT_UNDEFINED)
+        if (specification.format == vk::Format::eUndefined)
         {
             stbi_image_free(image_data);
             return nullptr;
@@ -223,78 +204,75 @@ namespace BC
         return texture;
     }
 
-    void Texture2D::CreateTexture(const unsigned char* texture_data_in, VkFormat texture_data_in_format)
+    void Texture2D::CreateTexture(const unsigned char* texture_data_in, vk::Format texture_data_in_format)
     {
         const auto& spec = m_Specification;
         auto vulkan_core = Application::GetVulkanCore();
+        auto vma_allocator = vulkan_core->GetAllocator();
+        auto& device = vulkan_core->GetLogicalDevice();
 
-        // --- Create Image ---
-        VkImageCreateInfo image_info{};
-        image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        image_info.imageType = VK_IMAGE_TYPE_2D;
-        image_info.format = spec.format;
-        image_info.extent.width = spec.width;
-        image_info.extent.height = spec.height;
-        image_info.extent.depth = 1;
-        image_info.mipLevels = spec.generate_mips ? spec.mip_levels : 1;
-        image_info.arrayLayers = 1;
-        image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-        image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                        VK_IMAGE_USAGE_SAMPLED_BIT;
-
+        // --- Create Image with VMA ---
+        vk::ImageCreateInfo image_info = {};
+        image_info.setImageType(vk::ImageType::e2D);
+        image_info.setFormat(static_cast<vk::Format>(spec.format));
+        image_info.setExtent({ spec.width, spec.height, 1 });
+        image_info.setMipLevels(spec.generate_mips ? spec.mip_levels : 1);
+        image_info.setArrayLayers(1);
+        image_info.setSamples(vk::SampleCountFlagBits::e1);
+        image_info.setTiling(vk::ImageTiling::eOptimal);
+        image_info.setUsage(vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled);
+        
         if (texture_data_in)
-            image_info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-
+            image_info.usage |= vk::ImageUsageFlagBits::eTransferSrc;
         if (spec.is_render_target)
-            image_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
+            image_info.usage |= vk::ImageUsageFlagBits::eColorAttachment;
         if (spec.is_storage)
-            image_info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+            image_info.usage |= vk::ImageUsageFlagBits::eStorage;
+        
+            image_info.setSharingMode(vk::SharingMode::eExclusive);
+        image_info.setInitialLayout(vk::ImageLayout::eUndefined);
 
-        image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        VmaAllocationCreateInfo alloc_info = {};
+        alloc_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+        
+        VkImage raw_image = VK_NULL_HANDLE;
 
-        BC_THROW(vkCreateImage(vulkan_core->GetLogicalDevice(), &image_info, nullptr, &m_Image) == VK_SUCCESS, "Texture2D::CreateTexture: Could Not Create Image.");
+        BC_THROW(
+            vmaCreateImage(
+            vma_allocator,
+            image_info,
+            &alloc_info,
+            &raw_image,
+            &m_ImageAllocation,
+            nullptr
+            ) == VK_SUCCESS,
+            "Texture2D::CreateTexture: Could Not Create Image."
+        );
 
-        VkMemoryRequirements mem_requirements;
-        vkGetImageMemoryRequirements(vulkan_core->GetLogicalDevice(), m_Image, &mem_requirements);
-
-        VkMemoryAllocateInfo alloc_info{};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        alloc_info.allocationSize = mem_requirements.size;
-        alloc_info.memoryTypeIndex = vulkan_core->FindMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        BC_THROW(vkAllocateMemory(vulkan_core->GetLogicalDevice(), &alloc_info, nullptr, &m_ImageMemory) == VK_SUCCESS, "Texture2D::CreateTexture: Could Not Allocate Image Memory.");
-        BC_THROW(vkBindImageMemory(vulkan_core->GetLogicalDevice(), m_Image, m_ImageMemory, 0) == VK_SUCCESS, "Texture2D::CreateTexture: Could Not Bind Image Memory.");
+        m_Image = raw_image;
 
         // --- Upload texture ---
         if (texture_data_in)
         {
-            VkDeviceSize image_size = spec.width * spec.height *
-                                    GetChannelsFromFormat(texture_data_in_format) *
-                                    GetBytesPerChannel(texture_data_in_format);
+            vk::DeviceSize image_size = spec.width * spec.height *
+                GetChannelsFromFormat(texture_data_in_format) *
+                GetBytesPerChannel(texture_data_in_format);
 
             // Create staging buffer and upload
-            VkBuffer staging_buffer;
-            VkDeviceMemory staging_memory;
-            Util::CreateBuffer(vulkan_core->GetLogicalDevice(), vulkan_core->GetPhysicalDevice(), image_size,
-                                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                staging_buffer, staging_memory);
-
-            void* data = nullptr;
-            vkMapMemory(vulkan_core->GetLogicalDevice(), staging_memory, 0, image_size, 0, &data);
-            memcpy(data, texture_data_in, static_cast<size_t>(image_size));
-            vkUnmapMemory(vulkan_core->GetLogicalDevice(), staging_memory);
+            VulkanBuffer staging_buffer(
+                vma_allocator,
+                image_size,
+                vk::BufferUsageFlagBits::eTransferSrc,
+                VMA_MEMORY_USAGE_CPU_ONLY
+            );
+            staging_buffer.Upload(texture_data_in, image_size);
 
             // Submit layout transitions and copy
-            auto command_pool = vulkan_core->GetThreadUploadCommandPool();
+            auto& command_pool = vulkan_core->GetThreadCommandPool();
             auto cmd_buf = vulkan_core->BeginSingleUseCommandBuffer(command_pool);
 
-            Util::TransitionImageLayout(cmd_buf, m_Image, spec.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, spec.mip_levels);
-
-            Util::CopyBufferToImage(cmd_buf, staging_buffer, m_Image, spec.width, spec.height);
+            Util::TransitionImageLayout(cmd_buf, m_Image, spec.format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, spec.mip_levels);
+            Util::CopyBufferToImage(cmd_buf, staging_buffer.GetBuffer(), m_Image, spec.width, spec.height);
 
             if (spec.generate_mips)
             {
@@ -302,81 +280,122 @@ namespace BC
             }
             else
             {
-                Util::TransitionImageLayout(cmd_buf, m_Image, spec.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+                Util::TransitionImageLayout(cmd_buf, m_Image, spec.format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, 1);
             }
 
             vulkan_core->EndSingleUseCommandBuffer(vulkan_core->GetGraphicsQueue(), command_pool, cmd_buf);
-
-            vkDestroyBuffer(vulkan_core->GetLogicalDevice(), staging_buffer, nullptr);
-            vkFreeMemory(vulkan_core->GetLogicalDevice(), staging_memory, nullptr);
         }
 
-        // --- Create Image View ---
-        VkImageViewCreateInfo view_info{};
-        view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        view_info.image = m_Image;
-        view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        view_info.format = spec.format;
-        view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        view_info.subresourceRange.baseMipLevel = 0;
-        view_info.subresourceRange.levelCount = spec.mip_levels;
-        view_info.subresourceRange.baseArrayLayer = 0;
-        view_info.subresourceRange.layerCount = 1;
+        // --- Create Image View (RAII) ---
+        vk::ImageViewCreateInfo view_info = {};
+        view_info.setImage(m_Image);
+        view_info.setViewType(vk::ImageViewType::e2D);
+        view_info.setFormat(spec.format);
+        view_info.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eColor);
+        view_info.subresourceRange.setBaseMipLevel(0);
+        view_info.subresourceRange.setLevelCount(spec.mip_levels);
+        view_info.subresourceRange.setBaseArrayLayer(0);
+        view_info.subresourceRange.setLayerCount(1);
 
-        BC_THROW(vkCreateImageView(vulkan_core->GetLogicalDevice(), &view_info, nullptr, &m_ImageView) == VK_SUCCESS, "Texture2D::CreateTexture: Could Not Create Image View.");
+        m_ImageView.emplace(device, view_info);
 
-        // --- Create Sampler ---
-        VkSamplerCreateInfo sampler_info{};
-        sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        sampler_info.magFilter = spec.mag_filter;
-        sampler_info.minFilter = spec.min_filter;
-        sampler_info.addressModeU = spec.address_mode_u;
-        sampler_info.addressModeV = spec.address_mode_v;
-        sampler_info.addressModeW = spec.address_mode_v;
-        sampler_info.anisotropyEnable = VK_TRUE;
-        sampler_info.maxAnisotropy = 16.0f;
-        sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        sampler_info.unnormalizedCoordinates = VK_FALSE;
-        sampler_info.compareEnable = VK_FALSE;
-        sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        sampler_info.minLod = 0.0f;
-        sampler_info.maxLod = static_cast<float>(spec.mip_levels);
-        sampler_info.mipLodBias = 0.0f;
+        // --- Create Sampler (RAII) ---
+        vk::SamplerCreateInfo sampler_info = {};
+        sampler_info.setMagFilter(spec.mag_filter);
+        sampler_info.setMinFilter(spec.min_filter);
+        sampler_info.setAddressModeU(spec.address_mode_u);
+        sampler_info.setAddressModeV(spec.address_mode_v);
+        sampler_info.setAddressModeW(spec.address_mode_v);
+        sampler_info.setAnisotropyEnable(VK_TRUE);
+        sampler_info.setMaxAnisotropy(16.0f);
+        sampler_info.setBorderColor(vk::BorderColor::eIntOpaqueBlack);
+        sampler_info.setUnnormalizedCoordinates(VK_FALSE);
+        sampler_info.setCompareEnable(VK_FALSE);
+        sampler_info.setMipmapMode(vk::SamplerMipmapMode::eLinear);
+        sampler_info.setMinLod(0.0f);
+        sampler_info.setMaxLod(static_cast<float>(spec.mip_levels));
+        sampler_info.setMipLodBias(0.0f);
 
-        BC_THROW(vkCreateSampler(vulkan_core->GetLogicalDevice(), &sampler_info, nullptr, &m_Sampler) == VK_SUCCESS, "Texture2D::CreateTexture: Could Not Create Sampler.");
+        m_Sampler.emplace(device, sampler_info);
+
+        // --- Create Descriptor Set (RAII) ---
+        auto& layout = Application::GetGUILayer()->GetImGuiDescriptorSetLayout();
+        vk::DescriptorSetAllocateInfo alloc_info_ds = {};
+        alloc_info_ds.setDescriptorPool(Application::GetGUILayer()->GetImGuiDescriptorPool());
+        alloc_info_ds.setDescriptorSetCount(1);
+        alloc_info_ds.setSetLayouts(*layout);
+
+        try
+        {
+            m_ImageDescriptorSet.emplace(std::move(device.allocateDescriptorSets(alloc_info_ds)[0]));
+        }
+        catch (const vk::SystemError& e)
+        {
+            BC_THROW("Texture2D::CreateTexture: Could Not Allocate Descriptor Set. Error: {}", e.what());
+        }
+        catch (const std::exception& e)
+        {
+            BC_THROW("Texture2D::CreateTexture: Failed to Allocate Descriptor Set. Error: {}", e.what());
+        }
+
+        vk::DescriptorImageInfo image_info_ds = {};
+        image_info_ds.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+        image_info_ds.setImageView(*m_ImageView);
+        image_info_ds.setSampler(*m_Sampler);
+
+        vk::WriteDescriptorSet write_ds = {};
+        write_ds.setDstSet(*m_ImageDescriptorSet);
+        write_ds.setDstBinding(0);
+        write_ds.setDstArrayElement(0);
+        write_ds.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+        write_ds.setDescriptorCount(1);
+        write_ds.setPImageInfo(&image_info_ds);
+
+        device.updateDescriptorSets(write_ds, nullptr);
     }
 
-    VkDescriptorSet Texture2D::GetDescriptor()
+    std::optional<vk::raii::DescriptorSet>& Texture2D::GetImGuiDescriptorSet()
     {
-        if (m_ImageDescriptor != VK_NULL_HANDLE)
-            return m_ImageDescriptor;
+        if (m_ImageDescriptorSet.has_value())
+            return m_ImageDescriptorSet;
 
-        auto layout = Application::GetVulkanCore()->GetImageSamplerSetLayout();
-        VkDescriptorSetAllocateInfo alloc_info{};
-        alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        alloc_info.descriptorPool = Application::GetVulkanCore()->GetStaticDescriptorPool();
-        alloc_info.descriptorSetCount = 1;
-        alloc_info.pSetLayouts = &layout;
+        auto& device = Application::GetVulkanCore()->GetLogicalDevice();
+        auto& layout = Application::GetGUILayer()->GetImGuiDescriptorSetLayout();
 
-        BC_THROW(vkAllocateDescriptorSets(Application::GetVulkanCore()->GetLogicalDevice(), &alloc_info, &m_ImageDescriptor) == VK_SUCCESS, "Texture2D::CreateTexture: Could Not Allocate Descriptor Set.");
+        vk::DescriptorSetAllocateInfo alloc_info_ds = {};
+        alloc_info_ds.setDescriptorPool(Application::GetGUILayer()->GetImGuiDescriptorPool());
+        alloc_info_ds.setDescriptorSetCount(1);
+        alloc_info_ds.setPSetLayouts(&(*layout));
 
-        VkDescriptorImageInfo image_info{};
-        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        image_info.imageView = m_ImageView;
-        image_info.sampler = m_Sampler;
+        try
+        {
+            m_ImageDescriptorSet.emplace(std::move(device.allocateDescriptorSets(alloc_info_ds)[0]));
+        }
+        catch (const vk::SystemError& e)
+        {
+            BC_THROW("Texture2D::GetDescriptorSet: Could Not Allocate Descriptor Set. Error: {}", e.what());
+        }
+        catch (const std::exception& e)
+        {
+            BC_THROW("Texture2D::GetDescriptorSet: Failed to Allocate Descriptor Set. Error: {}", e.what());
+        }
 
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.dstSet = m_ImageDescriptor;
-        write.dstBinding = 0;
-        write.dstArrayElement = 0;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        write.descriptorCount = 1;
-        write.pImageInfo = &image_info;
+        vk::DescriptorImageInfo image_info_ds = {};
+        image_info_ds.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+        image_info_ds.setImageView(*m_ImageView);
+        image_info_ds.setSampler(*m_Sampler);
 
-        vkUpdateDescriptorSets(Application::GetVulkanCore()->GetLogicalDevice(), 1, &write, 0, nullptr);
+        vk::WriteDescriptorSet write_ds = {};
+        write_ds.setDstSet(*m_ImageDescriptorSet);
+        write_ds.setDstBinding(0);
+        write_ds.setDstArrayElement(0);
+        write_ds.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+        write_ds.setDescriptorCount(1);
+        write_ds.setPImageInfo(&image_info_ds);
 
-        return m_ImageDescriptor;
+        device.updateDescriptorSets(write_ds, {});
+
+        return m_ImageDescriptorSet;
     }
 
 }

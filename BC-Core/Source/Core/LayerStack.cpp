@@ -103,114 +103,110 @@ namespace BC
 		// Setup ImGui Descriptor Pool
 		auto vulkan_core = Application::GetVulkanCore();
 		{
-			VkDescriptorPoolSize pool_sizes[] =
+			vk::DescriptorPoolSize pool_sizes[] =
 			{
-				{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-				{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+				{ vk::DescriptorType::eSampler, 1000 },
+				{ vk::DescriptorType::eCombinedImageSampler, 1000 },
+				{ vk::DescriptorType::eSampledImage, 1000 },
+				{ vk::DescriptorType::eStorageImage, 1000 },
+				{ vk::DescriptorType::eUniformTexelBuffer, 1000 },
+				{ vk::DescriptorType::eStorageTexelBuffer, 1000 },
+				{ vk::DescriptorType::eUniformBuffer, 1000 },
+				{ vk::DescriptorType::eStorageBuffer, 1000 },
+				{ vk::DescriptorType::eUniformBufferDynamic, 1000 },
+				{ vk::DescriptorType::eStorageBufferDynamic, 1000 },
+				{ vk::DescriptorType::eInputAttachment, 1000 }
 			};
 
-			VkDescriptorPoolCreateInfo pool_info = 
+			vk::DescriptorPoolCreateInfo pool_info = {};
+			pool_info.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+			pool_info.setMaxSets(1000 * static_cast<uint32_t>(BC_ARRAY_SIZE(pool_sizes)));
+			pool_info.setPoolSizeCount(static_cast<uint32_t>(BC_ARRAY_SIZE(pool_sizes)));
+			pool_info.setPPoolSizes(pool_sizes);
+
+			try
 			{
-				.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-				.pNext = VK_NULL_HANDLE,
-				.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
-				.maxSets = 1000 * static_cast<uint32_t>(BC_ARRAY_SIZE(pool_sizes)),
-				.poolSizeCount = static_cast<uint32_t>(BC_ARRAY_SIZE(pool_sizes)),
-				.pPoolSizes = pool_sizes
-			};
-			
-			auto result = vkCreateDescriptorPool(vulkan_core->GetLogicalDevice(), &pool_info, VK_NULL_HANDLE, &m_ImGuiDescriptorPool);
-			BC_ASSERT(result == VK_SUCCESS, "GUILayer::OnAttach: Could Not Create ImGui Descriptor Pool.");
+				m_ImGuiDescriptorPool = vulkan_core->GetLogicalDevice().createDescriptorPool(pool_info);
+			}
+			catch (const vk::SystemError& e)
+			{
+				BC_THROW(false, std::format("GUILayer::OnAttach: Could Not Create ImGui Descriptor Pool. Error: {}", e.what()));
+			}
 
-			VkDescriptorSetLayoutBinding binding{};
-			binding.binding = 0;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			binding.descriptorCount = 1;
-			binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-			binding.pImmutableSamplers = nullptr;
+			vk::DescriptorSetLayoutBinding binding = {};
+			binding.setBinding(0);
+			binding.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+			binding.setDescriptorCount(1);
+			binding.setStageFlags(vk::ShaderStageFlagBits::eFragment);
+			binding.setPImmutableSamplers(nullptr);
 
-			VkDescriptorSetLayoutCreateInfo layout_info{};
-			layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			layout_info.bindingCount = 1;
-			layout_info.pBindings = &binding;
+			vk::DescriptorSetLayoutCreateInfo layout_info{};
+			layout_info.setBindingCount(1);
+			layout_info.setPBindings(&binding);
 
-			result = vkCreateDescriptorSetLayout(vulkan_core->GetLogicalDevice(), &layout_info, nullptr, &m_ImGuiDescriptorSetLayout);
-			BC_ASSERT(result == VK_SUCCESS, "GUILayer::OnAttach: Could Not Create ImGui Default Descriptor Set Layout.");
+			try
+			{
+				m_ImGuiDescriptorSetLayout = vulkan_core->GetLogicalDevice().createDescriptorSetLayout(layout_info);
+			}
+			catch (const vk::SystemError& e)
+			{
+				BC_THROW(false, std::format("GUILayer::OnAttach: Could Not Create ImGui Descriptor Set Layout. Error: {}", e.what()));
+			}
 		}
 
 		GLFWwindow* window = static_cast<GLFWwindow*>(Application::GetWindow()->GetNativeWindow());
 
 		auto result = ImGui_ImplGlfw_InitForVulkan(window, false);
-		BC_ASSERT(result, "GUILayer::OnAttach: Could Not Init ImGui GLFW Implementation For Vulkan.");
+		BC_THROW(result, "GUILayer::OnAttach: Could Not Init ImGui GLFW Implementation For Vulkan.");
 
 		ImGui_ImplVulkan_InitInfo imgui_create_info = {};
-		imgui_create_info.Instance = vulkan_core->GetInstance();
-		imgui_create_info.PhysicalDevice = vulkan_core->GetPhysicalDevice();
-		imgui_create_info.Device = vulkan_core->GetLogicalDevice();
+		imgui_create_info.Instance = *vulkan_core->GetInstance();
+		imgui_create_info.PhysicalDevice = *vulkan_core->GetPhysicalDevice();
+		imgui_create_info.Device = *vulkan_core->GetLogicalDevice();
 		imgui_create_info.QueueFamily = vulkan_core->GetGraphicsQueueFamily();
-		imgui_create_info.Queue = vulkan_core->GetGraphicsQueue();
-		imgui_create_info.DescriptorPool = m_ImGuiDescriptorPool;
-		imgui_create_info.RenderPass = vulkan_core->GetSwapchain().GetRenderPass();
+		imgui_create_info.Queue = *vulkan_core->GetGraphicsQueue();
+		imgui_create_info.DescriptorPool = **m_ImGuiDescriptorPool;
+		imgui_create_info.RenderPass = *vulkan_core->GetSwapchain().GetRenderPass();
 		imgui_create_info.MinImageCount = Swapchain::s_MinImageCount;
 		imgui_create_info.ImageCount = vulkan_core->GetSwapchain().GetImageCount();
 		imgui_create_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 		imgui_create_info.UseDynamicRendering = false;
 
 		result = ImGui_ImplVulkan_Init(&imgui_create_info);
-		BC_ASSERT(result, "GUILayer::OnAttach: Could Not Init ImGui Vulkan Implementation.");
+		BC_THROW(result, "GUILayer::OnAttach: Could Not Init ImGui Vulkan Implementation.");
 		
 		ImGui_ImplVulkan_CreateFontsTexture();
 		
-		VkSamplerCreateInfo sampler_info = {};
-		sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		sampler_info.magFilter = VK_FILTER_LINEAR;
-		sampler_info.minFilter = VK_FILTER_LINEAR;
-		sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-		sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		sampler_info.minLod = 0.0f;
-		sampler_info.maxLod = 1.0f;
+		vk::SamplerCreateInfo sampler_info = {};
+		sampler_info.setMagFilter(vk::Filter::eLinear);
+		sampler_info.setMinFilter(vk::Filter::eLinear);
+		sampler_info.setAddressModeU(vk::SamplerAddressMode::eClampToEdge);
+		sampler_info.setAddressModeV(vk::SamplerAddressMode::eClampToEdge);
+		sampler_info.setAddressModeW(vk::SamplerAddressMode::eClampToEdge);
+		sampler_info.setBorderColor(vk::BorderColor::eIntOpaqueBlack);
+		sampler_info.setMipmapMode(vk::SamplerMipmapMode::eLinear);
+		sampler_info.setMinLod(0.0f);
+		sampler_info.setMaxLod(1.0f);
 
-		result = vkCreateSampler(vulkan_core->GetLogicalDevice(), &sampler_info, nullptr, &m_ImGuiDefaultSampler);
-		BC_ASSERT(result == VK_SUCCESS, "GUILayer::OnAttach: Could Not Create ImGui Default Sampler.");
+		try
+		{
+			m_ImGuiDefaultSampler = vulkan_core->GetLogicalDevice().createSampler(sampler_info);
+		}
+		catch (const vk::SystemError& e)
+		{
+			BC_THROW(false, std::format("GUILayer::OnAttach: Could Not Create ImGui Default Sampler. Error: {}", e.what()));
+		}
 	}
 
 	void GUILayer::OnDetach() 
 	{
-		VkDevice device = Application::GetVulkanCore()->GetLogicalDevice();
-
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 
-		if (m_ImGuiDefaultSampler)
-		{
-			vkDestroySampler(device, m_ImGuiDefaultSampler, nullptr);
-			m_ImGuiDefaultSampler = VK_NULL_HANDLE;
-		}
-
-		if (m_ImGuiDescriptorSetLayout)
-		{
-			vkDestroyDescriptorSetLayout(device, m_ImGuiDescriptorSetLayout, nullptr);
-			m_ImGuiDescriptorSetLayout = VK_NULL_HANDLE;
-		}
-
-		if (m_ImGuiDescriptorPool)
-		{
-			vkDestroyDescriptorPool(device, m_ImGuiDescriptorPool, nullptr);
-			m_ImGuiDescriptorPool = VK_NULL_HANDLE;
-		}
+		m_ImGuiDefaultSampler.reset();
+		m_ImGuiDescriptorSetLayout.reset();
+		m_ImGuiDescriptorPool.reset();
 	}
 
 	void GUILayer::Begin() 
@@ -235,7 +231,8 @@ namespace BC
 		}
 		
 		auto vulkan_core = Application::GetVulkanCore();
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vulkan_core->GetCurrentFrame().command_buffer);
+		if (vulkan_core->GetCurrentFrame().command_buffer)
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), **vulkan_core->GetCurrentFrame().command_buffer);
 	}
 
 	void GUILayer::SetDarkThemeColors() {
@@ -300,7 +297,6 @@ namespace BC
 	{
 		return static_cast<uint32_t>(GImGui->ActiveId);
 	}
-
 
 #pragma endregion
 

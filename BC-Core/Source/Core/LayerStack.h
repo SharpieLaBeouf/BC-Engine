@@ -9,7 +9,7 @@
 #include <string>
 
 // External Vendor Library Headers
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 namespace BC 
 {
@@ -58,17 +58,22 @@ namespace BC
 
 		uint32_t GetActiveWidgetID() const;
 
-		VkSampler GetImGuiDefaultSampler() const { return m_ImGuiDefaultSampler; }
-		VkDescriptorPool GetImGuiDescriptorPool() const { return m_ImGuiDescriptorPool; }
-		VkDescriptorSetLayout GetImGuiDescriptorSetLayout() const { return m_ImGuiDescriptorSetLayout; }
+		const vk::raii::Sampler& GetImGuiDefaultSampler() const { return *m_ImGuiDefaultSampler; }
+		vk::raii::Sampler& GetImGuiDefaultSampler() { return *m_ImGuiDefaultSampler; }
+		
+		const vk::raii::DescriptorPool& GetImGuiDescriptorPool() const { return *m_ImGuiDescriptorPool; }
+		vk::raii::DescriptorPool& GetImGuiDescriptorPool() { return *m_ImGuiDescriptorPool; }
+
+		const vk::raii::DescriptorSetLayout& GetImGuiDescriptorSetLayout() const { return *m_ImGuiDescriptorSetLayout; }
+		vk::raii::DescriptorSetLayout& GetImGuiDescriptorSetLayout() { return *m_ImGuiDescriptorSetLayout; }
 
 	private:
 
 		bool m_BlockEvents = true;
 
-		VkSampler 				m_ImGuiDefaultSampler		= VK_NULL_HANDLE;
-		VkDescriptorPool 		m_ImGuiDescriptorPool 		= VK_NULL_HANDLE;
-		VkDescriptorSetLayout 	m_ImGuiDescriptorSetLayout 	= VK_NULL_HANDLE;
+		std::optional<vk::raii::Sampler> m_ImGuiDefaultSampler;
+		std::optional<vk::raii::DescriptorPool> m_ImGuiDescriptorPool;
+		std::optional<vk::raii::DescriptorSetLayout> m_ImGuiDescriptorSetLayout;
 	};
 
 	class LayerStack 

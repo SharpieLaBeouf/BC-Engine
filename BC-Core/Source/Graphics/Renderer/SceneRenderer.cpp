@@ -282,6 +282,14 @@ namespace BC
 
     void SceneRenderer::RecordCommandBuffers(uint32_t frame_index)
     {
+        auto& frame = Application::GetVulkanCore()->GetFrameInFlight(frame_index);
+
+        // Reset Pools and Buffers
+        // frame.command_pool->reset(vk::CommandPoolResetFlagBits::eReleaseResources);
+        // frame.command_buffer->reset(vk::CommandBufferResetFlagBits::eReleaseResources);
+        // frame.descriptor_pool->reset(vk::DescriptorPoolResetFlags{});
+
+        // Start Recording...
     }
 
     void SceneRenderer::SubmitCommandBuffers(uint32_t frame_index)

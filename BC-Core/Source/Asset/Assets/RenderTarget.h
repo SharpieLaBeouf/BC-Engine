@@ -6,13 +6,18 @@
 // C++ Standard Library Headers
 #include <vector>
 #include <memory>
+#include <optional>
 
 // External Vendor Library Headers
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
+#if defined(BC_PLATFORM_WINDOWS)
+#include <vma/vk_mem_alloc.h>
+#elif defined(BC_PLATFORM_LINUX)
+#include <vk_mem_alloc.h>
+#endif
 
 namespace BC
 {
-
 	enum class RenderTargetAttachmentFormat : uint8_t
 	{
 		None = 0,
@@ -69,19 +74,16 @@ namespace BC
         void Resize(uint32_t width, uint32_t height);
 
         // ---- Getters ----
-        VkExtent2D GetExtent() const { return { m_Specification.width, m_Specification.height }; }
+        vk::Extent2D GetExtent() const { return { m_Specification.width, m_Specification.height }; }
         
-        VkImage GetColourAttachmentImage(uint32_t index, bool get_multisampled_image = false) const;
-        VkImageView GetColourAttachmentView(uint32_t index, bool get_multisampled_image = false) const;
-        
-        VkImage GetDepthAttachmentImage(bool get_multisampled_image = false) const;
-        VkImageView GetDepthAttachmentView(bool get_multisampled_image = false) const;
+        vk::Image GetColourAttachmentImage(uint32_t index, bool get_multisampled_image = false) const;
+        std::optional<std::reference_wrapper<vk::raii::ImageView>> GetColourAttachmentView(uint32_t index, bool get_multisampled_image = false);
+
+        vk::Image GetDepthAttachmentImage(bool get_multisampled_image = false) const;
+        std::optional<std::reference_wrapper<vk::raii::ImageView>> GetDepthAttachmentView(bool get_multisampled_image = false);
 
         const std::vector<RenderTargetAttachment>& GetAttachments() const { return m_ColourAttachments; }
         const RenderTargetAttachment& GetDepthStencilAttachment() const { return m_DepthStencilAttachment; }
-
-        const VkImageView* FindAttachment(RenderTargetAttachmentFormat format) const;
-        uint32_t FindAttachmentIndex(RenderTargetAttachmentFormat format) const;
 
         // ---- Static Methods ----
         static std::shared_ptr<RenderTarget> CreateRenderTarget(const RenderTargetSpecification& specification);
@@ -91,24 +93,23 @@ namespace BC
         void Invalidate();
         void Cleanup();
 
-        void CreateAttachment(VkFormat format, VkImageAspectFlags aspect, bool multisampled, VkImageUsageFlags usage, RenderTargetAttachment& out_attachment);
+        void CreateAttachment(vk::Format format, vk::ImageAspectFlags aspect, bool multisampled, vk::ImageUsageFlags usage, RenderTargetAttachment& out_attachment);
 
         struct RenderTargetAttachment
         {
             RenderTargetAttachmentSpecification specification = { RenderTargetAttachmentFormat::None };
 
-            VkImage resolved_image                  = VK_NULL_HANDLE;
-            VkImageView resolved_image_view         = VK_NULL_HANDLE;
+            vk::Image resolved_image;
+            VmaAllocation resolved_allocation = VK_NULL_HANDLE;
+            std::optional<vk::raii::ImageView> resolved_image_view;
 
-            VkImage multisampled_image              = VK_NULL_HANDLE;
-            VkImageView multisampled_image_view     = VK_NULL_HANDLE;
+            vk::Image multisampled_image;
+            VmaAllocation multisampled_allocation = VK_NULL_HANDLE;
+            std::optional<vk::raii::ImageView> multisampled_image_view;
 
-            VkDeviceMemory multisampled_memory      = VK_NULL_HANDLE;
-            VkDeviceMemory resolved_memory          = VK_NULL_HANDLE;
+            mutable std::optional<vk::raii::DescriptorSet> descriptor_set;
 
-            mutable VkDescriptorSet descriptor_set          = VK_NULL_HANDLE;
-
-            VkDescriptorSet GetDescriptor() const;
+            vk::raii::DescriptorSet& GetImGuiDescriptorSet();
         };
         
         RenderTargetSpecification m_Specification;

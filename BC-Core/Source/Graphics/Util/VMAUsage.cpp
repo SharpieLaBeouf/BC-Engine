@@ -2,7 +2,7 @@
 
 #define VMA_IMPLEMENTATION
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 #if defined(BC_PLATFORM_WINDOWS)
 #include <vma/vk_mem_alloc.h>
 #elif defined(BC_PLATFORM_LINUX)

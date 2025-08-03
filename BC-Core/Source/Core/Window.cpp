@@ -144,16 +144,17 @@ namespace BC
         Application::Get()->SetMinimised(w == 0 || h == 0);
 
         auto physical_device = Application::GetVulkanCore()->GetPhysicalDevice();
-        auto surface = Application::GetVulkanCore()->GetSurface();
+        auto& surface = Application::GetVulkanCore()->GetSurface();
         auto capabilities = Swapchain::GetSwapchainSupport(physical_device, surface);
-        Swapchain::s_MinImageCount = std::max<uint32_t>(capabilities.Capabilities.minImageCount, 2);
+        
+        Swapchain::s_MinImageCount = std::max<uint32_t>(capabilities.capabilities.minImageCount, 2);
         BC_THROW(Swapchain::s_MinImageCount >= 2, "Window::WindowResizeCallback: Min Image Count Must Be Atleast 2.");
         SwapchainSpecification swapchain_spec = 
         {
-            .ImageCount = static_cast<uint8_t>(Swapchain::s_MinImageCount + 1),
-            .ImageFormat = Swapchain::ChooseSwapchainFormat(capabilities.Formats),
-            .PresentMode = Swapchain::ChooseSwapchainPresentMode(capabilities.PresentModes),
-            .Extent = Swapchain::ChooseSwapchainExtent(capabilities.Capabilities)
+            .image_count = static_cast<uint8_t>(Swapchain::s_MinImageCount + 1),
+            .image_format = Swapchain::ChooseSwapchainFormat(capabilities.formats),
+            .present_mode = Swapchain::ChooseSwapchainPresentMode(capabilities.present_modes),
+            .extent = Swapchain::ChooseSwapchainExtent(capabilities.capabilities)
         };
 
         Application::Get()->ResizeSwapchain(swapchain_spec);

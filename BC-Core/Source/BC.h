@@ -37,8 +37,10 @@
 #include "Graphics/Renderer/SceneRenderer.h"
 #include "Graphics/Renderer/ShadowEnvironment.h"
 
-#include "Graphics/Vulkan/RenderCommand.h"
+#include "Graphics/Util/BufferLayout.h"
+
 #include "Graphics/Vulkan/Swapchain.h"
+#include "Graphics/Vulkan/VulkanBuffer.h"
 #include "Graphics/Vulkan/VulkanCore.h"
 #include "Graphics/Vulkan/VulkanUtil.h"
 

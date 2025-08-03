@@ -319,7 +319,7 @@ namespace BC
 
 						ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 						ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
-						ImGui::ImageButton(entry.path().string().c_str(), (ImTextureID)m_FolderIcon->GetDescriptor(), { 64.0f, 64.0f }, { 0, 1 }, { 1, 0 });
+						ImGui::ImageButton(entry.path().string().c_str(), (ImTextureID)**m_FolderIcon->GetImGuiDescriptorSet(), { 64.0f, 64.0f }, { 0, 1 }, { 1, 0 });
 						if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) 
                         {
 							SetCurrentDirectory(entry.path());
@@ -343,14 +343,13 @@ namespace BC
 
 						ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 						ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
-						ImTextureID texture_id = m_FileIcon->GetDescriptor();
+						ImTextureID texture_id = **m_FileIcon->GetImGuiDescriptorSet();
 
 						if (AssetManager::IsExtensionSupported(entry.path().extension()) && AssetManager::GetAssetTypeFromFileExtension(entry.path().extension()) == AssetType::Texture2D)
 						{
-                            // TODO: Implement
-							// auto texture_asset = AssetManager::GetAsset<Texture2D>(Project::GetStaticEditorAssetManager()->GetHandleFromFilePath(entry.path(), Project::GetActiveProject()->GetAssetDirectory()));
-							// if (texture_asset)
-							// 	texture_id = texture_asset->GetID();
+							auto texture_asset = AssetManager::GetAsset<Texture2D>(AssetManager::GetAssetHandle(entry.path()));
+							if (texture_asset)
+								texture_id = **texture_asset->GetImGuiDescriptorSet();
 						}
 
 						ImGui::ImageButton(entry.path().string().c_str(), (ImTextureID)(uintptr_t)texture_id, {64.0f, 64.0f}, {0, 1}, {1, 0});

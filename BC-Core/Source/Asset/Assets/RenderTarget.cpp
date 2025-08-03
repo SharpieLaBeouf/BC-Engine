@@ -6,9 +6,7 @@ namespace BC
 
     RenderTarget::RenderTarget(const RenderTargetSpecification& specification)
     {
-
         m_Specification = specification;
-
         Invalidate();
     }
 
@@ -46,9 +44,9 @@ namespace BC
         Invalidate();
     }
 
-    VkImage RenderTarget::GetColourAttachmentImage(uint32_t index, bool get_multisampled_image) const
+    vk::Image RenderTarget::GetColourAttachmentImage(uint32_t index, bool get_multisampled_image) const
     {
-        if (index < 0 || index >= m_ColourAttachments.size())
+        if (index >= m_ColourAttachments.size())
             return VK_NULL_HANDLE;
 
         if (IsMultiSampled() && get_multisampled_image)
@@ -59,20 +57,30 @@ namespace BC
         return m_ColourAttachments[index].resolved_image;
     }
 
-    VkImageView RenderTarget::GetColourAttachmentView(uint32_t index, bool get_multisampled_image) const
+    std::optional<std::reference_wrapper<vk::raii::ImageView>> RenderTarget::GetColourAttachmentView(uint32_t index, bool get_multisampled_image)
     {
-        if (index < 0 || index >= m_ColourAttachments.size())
-            return VK_NULL_HANDLE;
+        if (index >= m_ColourAttachments.size())
+            return std::nullopt;
 
         if (IsMultiSampled() && get_multisampled_image)
         {
-            return m_ColourAttachments[index].multisampled_image_view;
+            if (!m_ColourAttachments[index].multisampled_image_view.has_value())
+            {
+                return std::nullopt;
+            }
+
+            return std::ref(*m_ColourAttachments[index].multisampled_image_view);
         }
 
-        return m_ColourAttachments[index].resolved_image_view;
+        if (!m_ColourAttachments[index].resolved_image_view.has_value())
+        {
+            return std::nullopt;
+        }
+
+        return std::ref(*m_ColourAttachments[index].resolved_image_view);
     }
 
-    VkImage RenderTarget::GetDepthAttachmentImage(bool get_multisampled_image) const
+    vk::Image RenderTarget::GetDepthAttachmentImage(bool get_multisampled_image) const
     {
         if (IsMultiSampled() && get_multisampled_image)
         {
@@ -82,61 +90,57 @@ namespace BC
         return m_DepthStencilAttachment.resolved_image;
     }
 
-    VkImageView RenderTarget::GetDepthAttachmentView(bool get_multisampled_image) const
+    std::optional<std::reference_wrapper<vk::raii::ImageView>> RenderTarget::GetDepthAttachmentView(bool get_multisampled_image)
     {
         if (IsMultiSampled() && get_multisampled_image)
         {
-            return m_DepthStencilAttachment.multisampled_image_view;
+            return std::ref(*m_DepthStencilAttachment.multisampled_image_view);
         }
 
-        return m_DepthStencilAttachment.resolved_image_view;
+        return std::ref(*m_DepthStencilAttachment.resolved_image_view);
     }
 
-    const VkImageView* RenderTarget::FindAttachment(RenderTargetAttachmentFormat format) const
+    vk::raii::DescriptorSet& RenderTarget::RenderTargetAttachment::GetImGuiDescriptorSet()
     {
-        return nullptr;
-    }
+        if (descriptor_set)
+            return *descriptor_set;
 
-    uint32_t RenderTarget::FindAttachmentIndex(RenderTargetAttachmentFormat format) const
-    {
-        return 0;
-    }
+        auto& device = Application::GetVulkanCore()->GetLogicalDevice();
 
-    VkDescriptorSet RenderTarget::RenderTargetAttachment::GetDescriptor() const
-    {
-        if (descriptor_set != VK_NULL_HANDLE)
-            return descriptor_set;
+        vk::DescriptorSetAllocateInfo alloc_info = {};
+        alloc_info.setDescriptorPool(Application::GetGUILayer()->GetImGuiDescriptorPool());
+        alloc_info.setDescriptorSetCount(1);
+        alloc_info.setPSetLayouts(&(*Application::GetGUILayer()->GetImGuiDescriptorSetLayout()));
 
-        VkDevice device = Application::GetVulkanCore()->GetLogicalDevice();
+        try
+        {
+            descriptor_set.emplace(std::move(device.allocateDescriptorSets(alloc_info)[0]));
+        }
+        catch (const vk::SystemError& e)
+        {
+            BC_THROW("RenderTargetAttachment::GetDescriptorSet: Could Not Allocate Descriptor Set. Error: {}", e.what());
+        }
+        catch (const std::exception& e)
+        {
+            BC_THROW("RenderTargetAttachment::GetDescriptorSet: Failed to Allocate Descriptor Set. Error: {}", e.what());
+        }
 
-        VkDescriptorSetAllocateInfo alloc_info{};
-        alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        alloc_info.descriptorPool = Application::GetGUILayer()->GetImGuiDescriptorPool();
-        alloc_info.descriptorSetCount = 1;
+        vk::DescriptorImageInfo image_info = {};
+        image_info.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+        image_info.setImageView(*resolved_image_view);
+        image_info.setSampler(Application::GetGUILayer()->GetImGuiDefaultSampler());
 
-        auto descriptor_set_layout = Application::GetGUILayer()->GetImGuiDescriptorSetLayout();
-        alloc_info.pSetLayouts = &descriptor_set_layout;
+        vk::WriteDescriptorSet write = {};
+        write.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+        write.setDstSet(*descriptor_set);
+        write.setDstBinding(0);
+        write.setDstArrayElement(0);
+        write.setDescriptorCount(1);
+        write.setPImageInfo(&image_info);
 
-        BC_THROW(vkAllocateDescriptorSets(device, &alloc_info, &descriptor_set) == VK_SUCCESS,
-            "RenderTarget::RenderTargetAttachment::GetDescriptor: Failed to allocate descriptor set.");
+        device.updateDescriptorSets(write, {});
 
-        VkDescriptorImageInfo image_info{};
-        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        image_info.imageView = resolved_image_view;
-        image_info.sampler = Application::GetGUILayer()->GetImGuiDefaultSampler();
-
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.dstSet = descriptor_set;
-        write.dstBinding = 0;
-        write.dstArrayElement = 0;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        write.descriptorCount = 1;
-        write.pImageInfo = &image_info;
-
-        vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
-
-        return descriptor_set;
+        return *descriptor_set;
     }
 
     void RenderTarget::Invalidate()
@@ -158,27 +162,27 @@ namespace BC
             RenderTargetAttachment attachment = {};
             attachment.specification = specification;
 
-            VkFormat format;
-            VkImageAspectFlags aspect_mask;
+            vk::Format format;
+            vk::ImageAspectFlags aspect_mask;
 
             switch (specification.attachment_format)
             {
                 case RenderTargetAttachmentFormat::RGBA8:
                 {
-                    format = VK_FORMAT_R8G8B8A8_UNORM;
-                    aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    format = vk::Format::eR8G8B8A8Unorm;
+                    aspect_mask = vk::ImageAspectFlagBits::eColor;
                     break;
                 }
                 case RenderTargetAttachmentFormat::RED_INTEGER:
                 {
-                    format = VK_FORMAT_R32_SINT;
-                    aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    format = vk::Format::eR32Sint;
+                    aspect_mask = vk::ImageAspectFlagBits::eColor;
                     break;
                 }
                 case RenderTargetAttachmentFormat::DEPTH24STENCIL8:
                 {
-                    format = VK_FORMAT_D24_UNORM_S8_UINT;
-                    aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                    format = vk::Format::eD24UnormS8Uint;
+                    aspect_mask = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
                     break;
                 }
             }
@@ -190,10 +194,10 @@ namespace BC
                     format, 
                     aspect_mask, 
                     is_multisampled, 
-                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT, 
+                    vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage, 
                     attachment
                 );
-                m_DepthStencilAttachment = attachment;
+                m_DepthStencilAttachment = std::move(attachment);
             }
             else
             {
@@ -202,61 +206,37 @@ namespace BC
                     format, 
                     aspect_mask, 
                     is_multisampled, 
-                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT, 
+                    vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage, 
                     attachment
                 );
-                m_ColourAttachments.push_back(attachment);
+                m_ColourAttachments.push_back(std::move(attachment));
             }
         }
     }
 
     void RenderTarget::Cleanup()
     {
-        auto device = Application::GetVulkanCore()->GetLogicalDevice();
-        auto imgui_pool = Application::GetGUILayer()->GetImGuiDescriptorPool();
+        auto& device = Application::GetVulkanCore()->GetLogicalDevice();
+        auto vma_allocator = Application::GetVulkanCore()->GetAllocator();
 
         auto destroy_attachment = [&](RenderTargetAttachment& attachment)
         {
-            if (attachment.descriptor_set != VK_NULL_HANDLE)
+            attachment.descriptor_set.reset();
+            attachment.multisampled_image_view.reset();
+            attachment.resolved_image_view.reset();
+            
+            if (attachment.multisampled_image && attachment.multisampled_allocation)
             {
-                vkFreeDescriptorSets(device, imgui_pool, 1, &attachment.descriptor_set);
-                attachment.descriptor_set = VK_NULL_HANDLE;
-            }
-
-            if (attachment.multisampled_image_view) 
-            {
-                vkDestroyImageView(device, attachment.multisampled_image_view, nullptr);
-                attachment.multisampled_image_view = VK_NULL_HANDLE;
-            }
-
-            if (attachment.multisampled_image) 
-            {
-                vkDestroyImage(device, attachment.multisampled_image, nullptr);
+                vmaDestroyImage(vma_allocator, attachment.multisampled_image, attachment.multisampled_allocation);
                 attachment.multisampled_image = VK_NULL_HANDLE;
+                attachment.multisampled_allocation = nullptr;
             }
 
-            if (attachment.multisampled_memory) 
+            if (attachment.resolved_image && attachment.resolved_allocation)
             {
-                vkFreeMemory(device, attachment.multisampled_memory, nullptr);
-                attachment.multisampled_memory = VK_NULL_HANDLE;
-            }
-
-            if (attachment.resolved_image_view) 
-            {
-                vkDestroyImageView(device, attachment.resolved_image_view, nullptr);
-                attachment.resolved_image_view = VK_NULL_HANDLE;
-            }
-
-            if (attachment.resolved_image) 
-            {
-                vkDestroyImage(device, attachment.resolved_image, nullptr);
+                vmaDestroyImage(vma_allocator, attachment.resolved_image, attachment.resolved_allocation);
                 attachment.resolved_image = VK_NULL_HANDLE;
-            }
-
-            if (attachment.resolved_memory) 
-            {
-                vkFreeMemory(device, attachment.resolved_memory, nullptr);
-                attachment.resolved_memory = VK_NULL_HANDLE;
+                attachment.resolved_allocation = nullptr;
             }
 
             attachment.specification.attachment_format = RenderTargetAttachmentFormat::None;
@@ -270,68 +250,81 @@ namespace BC
         destroy_attachment(m_DepthStencilAttachment);
     }
 
-    void RenderTarget::CreateAttachment(VkFormat format, VkImageAspectFlags aspect, bool multisampled, VkImageUsageFlags usage, RenderTargetAttachment &out_attachment)
+    void RenderTarget::CreateAttachment(
+        vk::Format format,
+        vk::ImageAspectFlags aspect,
+        bool multisampled,
+        vk::ImageUsageFlags usage,
+        RenderTargetAttachment& out_attachment)
     {
-        VkDevice device = Application::GetVulkanCore()->GetLogicalDevice();
-        VkPhysicalDevice physical_device = Application::GetVulkanCore()->GetPhysicalDevice();
+        auto& device = Application::GetVulkanCore()->GetLogicalDevice();
+        auto vma_allocator = Application::GetVulkanCore()->GetAllocator();
 
         const uint32_t width = m_Specification.width;
         const uint32_t height = m_Specification.height;
         const uint32_t samples = m_Specification.samples;
 
-        auto create_image_and_view = [&](VkImage& image, VkImageView& view, VkDeviceMemory& memory, VkSampleCountFlagBits sample_count)
+        auto create_image_and_view = [&](vk::Image& image, VmaAllocation& allocation, std::optional<vk::raii::ImageView>& image_view, vk::SampleCountFlagBits sample_count)
         {
-            VkImageCreateInfo image_info{};
-            image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-            image_info.imageType = VK_IMAGE_TYPE_2D;
-            image_info.format = format;
-            image_info.extent.width = width;
-            image_info.extent.height = height;
-            image_info.extent.depth = 1;
-            image_info.mipLevels = 1;
-            image_info.arrayLayers = 1;
-            image_info.samples = sample_count;
-            image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-            image_info.usage = usage;
+            vk::ImageCreateInfo image_info = {};
+            image_info.setImageType(vk::ImageType::e2D);
+            image_info.setFormat(format);
+            image_info.setExtent({ width, height, 1 });
+            image_info.setMipLevels(1);
+            image_info.setArrayLayers(1);
+            image_info.setSamples(sample_count);
+            image_info.setTiling(vk::ImageTiling::eOptimal);
+            image_info.setUsage(static_cast<vk::ImageUsageFlags>(usage));
+            image_info.setSharingMode(vk::SharingMode::eExclusive);
+            image_info.setInitialLayout(vk::ImageLayout::eUndefined);
 
-            image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            VmaAllocationCreateInfo alloc_info{};
+            alloc_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+            
+            VkImage raw_image = VK_NULL_HANDLE;
 
-            BC_THROW(vkCreateImage(device, &image_info, nullptr, &image) == VK_SUCCESS, "RenderTarget::CreateAttachment: Could Not Create Image.");
+            BC_THROW(
+                vmaCreateImage(
+                vma_allocator,
+                image_info,
+                &alloc_info,
+                &raw_image,
+                &allocation,
+                nullptr
+                ) == VK_SUCCESS,
+                "RenderTarget::CreateAttachment: Could Not Create Image."
+            );
 
-            VkMemoryRequirements mem_requirements;
-            vkGetImageMemoryRequirements(device, image, &mem_requirements);
+            image = vk::Image(raw_image);
 
-            VkMemoryAllocateInfo alloc_info{};
-            alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            alloc_info.allocationSize = mem_requirements.size;
-            alloc_info.memoryTypeIndex = Application::GetVulkanCore()->FindMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            vk::ImageViewCreateInfo view_info = {};
+            view_info.setImage(image);
+            view_info.setViewType(vk::ImageViewType::e2D);
+            view_info.setFormat(format);
+            view_info.subresourceRange.setAspectMask(aspect);
+            view_info.subresourceRange.setBaseMipLevel(0);
+            view_info.subresourceRange.setLevelCount(1);
+            view_info.subresourceRange.setBaseArrayLayer(0);
+            view_info.subresourceRange.setLayerCount(1);
 
-            BC_THROW(vkAllocateMemory(device, &alloc_info, nullptr, &memory) == VK_SUCCESS, "RenderTarget::CreateAttachment: Could Not Allocate Image Memory.");
-            BC_THROW(vkBindImageMemory(device, image, memory, 0) == VK_SUCCESS, "RenderTarget::CreateAttachment: Could Not Bind Image Memory.");
-
-            VkImageViewCreateInfo view_info{};
-            view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            view_info.image = image;
-            view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            view_info.format = format;
-            view_info.subresourceRange.aspectMask = aspect;
-            view_info.subresourceRange.baseMipLevel = 0;
-            view_info.subresourceRange.levelCount = 1;
-            view_info.subresourceRange.baseArrayLayer = 0;
-            view_info.subresourceRange.layerCount = 1;
-
-            BC_THROW(vkCreateImageView(device, &view_info, nullptr, &view) == VK_SUCCESS, "RenderTarget::CreateAttachment: Could Not Create Image View.");
+            image_view.emplace(device, view_info);
         };
+
+        create_image_and_view(
+            out_attachment.resolved_image,
+            out_attachment.resolved_allocation,
+            out_attachment.resolved_image_view,
+            vk::SampleCountFlagBits::e1
+        );
 
         if (multisampled)
         {
-            create_image_and_view(out_attachment.multisampled_image, out_attachment.multisampled_image_view, out_attachment.multisampled_memory, static_cast<VkSampleCountFlagBits>(samples));
-            create_image_and_view(out_attachment.resolved_image, out_attachment.resolved_image_view, out_attachment.resolved_memory, VK_SAMPLE_COUNT_1_BIT);
-        }
-        else
-        {
-            create_image_and_view(out_attachment.resolved_image, out_attachment.resolved_image_view, out_attachment.resolved_memory, VK_SAMPLE_COUNT_1_BIT);
+            create_image_and_view(
+                out_attachment.multisampled_image,
+                out_attachment.multisampled_allocation,
+                out_attachment.multisampled_image_view,
+                static_cast<vk::SampleCountFlagBits>(samples)
+            );
         }
     }
 

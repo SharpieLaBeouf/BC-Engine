@@ -14,7 +14,7 @@
 #include <mutex>
 
 // External Vendor Library Headers
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 namespace BC
 {

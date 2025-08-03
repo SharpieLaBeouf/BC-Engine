@@ -3,7 +3,6 @@
 // Core Headers
 #include "VulkanUtil.h"
 #include "Swapchain.h"
-#include "RenderCommand.h"
 
 #include "Util/Platform.h"
 
@@ -16,9 +15,10 @@
 #include <unordered_map>
 #include <mutex>
 #include <thread>
+#include <optional>
 
 // External Vendor Library Headers
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 #if defined(BC_PLATFORM_WINDOWS)
 #include <vma/vk_mem_alloc.h>
 #elif defined(BC_PLATFORM_LINUX)
@@ -38,15 +38,34 @@ namespace BC
 
         VulkanCore() = default;
         ~VulkanCore() { Shutdown(); }
-
+        
         VulkanCore(const VulkanCore& other) = delete;
         VulkanCore(VulkanCore&& other) = delete;
-
+        
         VulkanCore& operator=(const VulkanCore& other) = delete;
         VulkanCore& operator=(VulkanCore&& other) = delete;
+    
+    #pragma region Initialization and Shutdown
 
-        VkResult Init(const char* app_name, GLFWwindow* window);
+        vk::Result Init(const char* app_name, GLFWwindow* window);
         void Shutdown();
+
+    private:
+
+        vk::Result InitContext();
+        vk::Result InitInstance(const char* app_name);
+        vk::Result InitDebugMessenger();
+        vk::Result InitSurface(GLFWwindow* window);
+        vk::Result InitDevice();
+        vk::Result InitVMA();
+        vk::Result InitSwapChainFramesInFlight();
+        vk::Result InitSwapchain(const SwapchainSpecification& swapchain_spec);
+
+    public:
+
+    #pragma endregion
+
+    #pragma region Frame Management
 
         void BeginFrame();
         void EndFrame();
@@ -54,102 +73,124 @@ namespace BC
         void BeginSwapchainRenderPass();
         void EndSwapchainRenderPass();
 
-        VkInstance GetInstance() const;
-        VkSurfaceKHR GetSurface() const;
+    #pragma endregion
 
-        VkPhysicalDevice GetPhysicalDevice() const;
-        const VkDevice GetLogicalDevice() const;
-        VmaAllocator GetAllocator() const { return m_Allocator; }
+    #pragma region Getters
 
-        const Swapchain& GetSwapchain() const { return *m_Swapchain.get(); }
-
+        // Instance
+        const vk::raii::Instance& GetInstance() const { return *m_Instance; }
+        vk::raii::Instance& GetInstance() { return *m_Instance; }
+    
+        // Surface
+        const vk::raii::SurfaceKHR& GetSurface() const { return *m_Surface; }
+        vk::raii::SurfaceKHR& GetSurface() { return *m_Surface; }
+    
+        // Physical Device
+        const vk::raii::PhysicalDevice& GetPhysicalDevice() const { return m_PhysicalDevices[m_SelectedDeviceIndex]; }
+        vk::raii::PhysicalDevice& GetPhysicalDevice() { return m_PhysicalDevices[m_SelectedDeviceIndex]; }
+    
+        // Logical Device
+        const vk::raii::Device& GetLogicalDevice() const { return *m_LogicalDevice; }
+        vk::raii::Device& GetLogicalDevice() { return *m_LogicalDevice; }
+    
+        // Queues
         uint32_t GetGraphicsQueueFamily() const;
         uint32_t GetComputeQueueFamily() const;
         uint32_t GetPresentQueueFamily() const;
         uint32_t GetTransferQueueFamily() const;
-        VkQueue GetGraphicsQueue() const;
-        VkQueue GetComputeQueue() const;
-        VkQueue GetPresentQueue() const;
-        VkQueue GetTransferQueue() const;
 
+        const vk::raii::Queue& GetGraphicsQueue() const { return *m_GraphicsQueue; }
+        vk::raii::Queue& GetGraphicsQueue() { return *m_GraphicsQueue; }
+
+        const vk::raii::Queue& GetComputeQueue() const { return *m_ComputeQueue; }
+        vk::raii::Queue& GetComputeQueue() { return *m_ComputeQueue; }
+
+        const vk::raii::Queue& GetPresentQueue() const { return *m_PresentQueue; }
+        vk::raii::Queue& GetPresentQueue() { return *m_PresentQueue; }
+
+        const vk::raii::Queue& GetTransferQueue() const { return *m_TransferQueue; }
+        vk::raii::Queue& GetTransferQueue() { return *m_TransferQueue; }
+        
+        // Allocator
+        VmaAllocator GetAllocator() const { return m_Allocator; }
+        
+        // Swapchain
+        const Swapchain& GetSwapchain() const { return *m_Swapchain.get(); }
+
+        // Frame's in Flight
+        uint32_t GetFrameIndex() const { return m_FrameIndex; }
+        uint32_t GetCurrentImageIndex() const { return m_CurrentImageIndex; }
+        SwapchainFrameInFlight& GetCurrentFrame() { return m_SwapChainFramesInFlight[m_FrameIndex]; }
+        SwapchainFrameInFlight& GetFrameInFlight(uint32_t index) { return m_SwapChainFramesInFlight[index]; }
+
+    #pragma endregion
+
+    #pragma region General Functions
+
+        // Resizing
         void ResizeScreenSpace(uint32_t width, uint32_t height);
         void ResizeSwapchain(const SwapchainSpecification& swapchain_spec);
 
-        uint32_t GetCurrentImageIndex() const { return m_CurrentImageIndex; }
-        uint32_t GetFrameIndex() const { return m_FrameIndex; }
-        SwapchainFrameInFlight& GetCurrentFrame() { return m_SwapChainFramesInFlight[m_FrameIndex]; }
-
-        uint32_t FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties) const;
-
-        VkSampler GetDefaultSampler() const { return m_DefaultSampler; }
-        VkDescriptorPool GetStaticDescriptorPool() const { return m_StaticDescriptorPool; }
-        VkDescriptorSetLayout GetImageSamplerSetLayout() const { return m_ImageSamplerSetLayout; }
+        // General
+        uint32_t FindMemoryType(uint32_t type_filter, vk::MemoryPropertyFlags properties) const;
         
-        VkCommandPool GetThreadUploadCommandPool();
-        VkCommandBuffer BeginSingleUseCommandBuffer(VkCommandPool pool);
-        void EndSingleUseCommandBuffer(VkQueue queue, VkCommandPool pool, VkCommandBuffer cmd);
+        // Single Use Command Buffers
+        vk::raii::CommandPool& GetThreadCommandPool();
+
+        vk::raii::CommandBuffer BeginSingleUseCommandBuffer(vk::raii::CommandPool& pool);
+        void EndSingleUseCommandBuffer(vk::raii::Queue& queue, vk::raii::CommandPool& pool, vk::raii::CommandBuffer& cmd);
+
+    #pragma endregion
 
     private:
 
-        VkResult CreateInstance(const char* app_name);
-        VkResult CreateDebugMessenger();
-        VkResult CreateSurface(GLFWwindow* window);
-        VkResult CreateDevice();
-        VkResult CreateGlobals();
-        VkResult CreateSwapChainFramesInFlight();
-        VkResult CreateSwapchain(const SwapchainSpecification& swapchain_spec);
+        std::optional<vk::raii::Context> m_Context{};
+        std::optional<vk::raii::Instance> m_Instance{};
+        std::optional<vk::raii::DebugUtilsMessengerEXT> m_DebugMessenger{};
 
-    private:
-
-        VkInstance m_Instance = VK_NULL_HANDLE;
-        VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
-        
-        VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+        std::optional<vk::raii::SurfaceKHR> m_Surface{};
 
         size_t m_SelectedDeviceIndex = -1;
-        VkDevice m_LogicalDevice = VK_NULL_HANDLE;
-        std::vector<VkPhysicalDevice> m_PhysicalDevices;
+        std::vector<vk::raii::PhysicalDevice> m_PhysicalDevices{};
+        std::optional<vk::raii::Device> m_LogicalDevice{};
 
         struct QueueFamilyIndices 
         {
-            std::optional<uint32_t> graphics_family;
-            std::optional<uint32_t> compute_family;
-            std::optional<uint32_t> present_family;
-            std::optional<uint32_t> transfer_family;
-        } m_QueueFamilyIndices;
+            std::optional<uint32_t> graphics_family     = 0;
+            std::optional<uint32_t> present_family      = 0;
+            std::optional<uint32_t> compute_family      = 0;
+            std::optional<uint32_t> transfer_family     = 0;
+        } m_QueueFamilyIndices{};
 
-        VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
-        VkQueue m_ComputeQueue = VK_NULL_HANDLE;
-        VkQueue m_PresentQueue = VK_NULL_HANDLE;
-        VkQueue m_TransferQueue = VK_NULL_HANDLE;
-        
+        std::optional<vk::raii::Queue> m_GraphicsQueue{};
+        std::optional<vk::raii::Queue> m_ComputeQueue{};
+        std::optional<vk::raii::Queue> m_PresentQueue{};
+        std::optional<vk::raii::Queue> m_TransferQueue{};
+
         VmaAllocator m_Allocator = VK_NULL_HANDLE;
         
-        std::unique_ptr<Swapchain> m_Swapchain = nullptr;
         uint32_t m_CurrentImageIndex;
-
-        uint32_t m_FrameIndex = 0;
+        std::unique_ptr<Swapchain> m_Swapchain = nullptr;
 
         struct SwapchainFrameInFlight
-        {
-            VkCommandPool   command_pool;
-            VkCommandBuffer command_buffer;
+        {            
+            // Does not need to be threadlocal as the Swapchain frame in flight is only used by the Render thread.
 
-            uint32_t    image_index;
-            VkSemaphore image_available_semaphore;
-            VkSemaphore render_finished_semaphore;
-            VkFence     in_flight_fence;
+            std::optional<vk::raii::CommandPool>        command_pool;
+            std::optional<vk::raii::CommandBuffer>      command_buffer;
+            std::optional<vk::raii::DescriptorPool>     descriptor_pool;
 
-            void* user_data;
+            uint32_t                                    image_index;
+            std::optional<vk::raii::Semaphore>          image_available_semaphore;
+            std::optional<vk::raii::Semaphore>          render_finished_semaphore;
+            std::optional<vk::raii::Fence>              in_flight_fence;
         };
+
+        uint32_t m_FrameIndex = 0;
         std::vector<SwapchainFrameInFlight> m_SwapChainFramesInFlight;
 
-        VkSampler m_DefaultSampler = VK_NULL_HANDLE;
-        VkDescriptorPool m_StaticDescriptorPool = VK_NULL_HANDLE;
-        VkDescriptorSetLayout m_ImageSamplerSetLayout = VK_NULL_HANDLE;
-
         std::mutex m_UploadPoolMutex;
-        std::unordered_map<std::thread::id, VkCommandPool> m_ThreadUploadPools;
+        std::unordered_map<std::thread::id, vk::raii::CommandPool> m_ThreadUploadPools;
     };
 
 }

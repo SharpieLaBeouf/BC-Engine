@@ -7,24 +7,24 @@
 #include <vector>
 
 // External Vendor Library Headers
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 namespace BC
 {
 
     struct SwapchainSpecification
     {
-        uint8_t ImageCount;
-        VkSurfaceFormatKHR ImageFormat;
-        VkPresentModeKHR PresentMode;
-        VkExtent2D Extent;
+        uint8_t image_count;
+        vk::SurfaceFormatKHR image_format;
+        vk::PresentModeKHR present_mode;
+        vk::Extent2D extent;
     };
 
     struct SwapChainSupport
     {
-        VkSurfaceCapabilitiesKHR Capabilities;
-        std::vector<VkSurfaceFormatKHR> Formats;
-        std::vector<VkPresentModeKHR> PresentModes;
+        vk::SurfaceCapabilitiesKHR capabilities;
+        std::vector<vk::SurfaceFormatKHR> formats;
+        std::vector<vk::PresentModeKHR> present_modes;
     };
 
     class Swapchain
@@ -38,19 +38,29 @@ namespace BC
 
         void CleanUp();
         void Invalidate(const SwapchainSpecification& swapchain_spec);
-
-        VkSwapchainKHR GetSwapchain() const { return m_Swapchain; }
-        VkRenderPass GetRenderPass() const { return m_RenderPass; }
-        uint32_t GetImageCount() const { return m_SwapChainImages.size(); }
-        const std::vector<VkImage>& GetImages() const { return m_SwapChainImages; }
-        const std::vector<VkImageView>& GetImageViews() const { return m_SwapChainImageViews; }
+        
         const SwapchainSpecification& GetSpecification() const { return m_Specification; }
-        const std::vector<VkFramebuffer>& GetFramebuffers() const { return m_SwapChainFramebuffers; }
 
-        static SwapChainSupport GetSwapchainSupport(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
-        static VkSurfaceFormatKHR ChooseSwapchainFormat(const std::vector<VkSurfaceFormatKHR>& formats);
-        static VkPresentModeKHR ChooseSwapchainPresentMode(const std::vector<VkPresentModeKHR>& present_modes);
-        static VkExtent2D ChooseSwapchainExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+        // Surface
+        const vk::raii::SwapchainKHR& GetSwapchainKHR() const { return *m_Swapchain; }
+        vk::raii::SwapchainKHR& GetSwapchainKHR() { return *m_Swapchain; }
+
+        // Render Pass
+        const vk::raii::RenderPass& GetRenderPass() const { return *m_RenderPass; }
+        vk::raii::RenderPass& GetRenderPass() { return *m_RenderPass; }
+
+        // Images, Views, and Framebuffers
+        uint32_t GetImageCount() const { return m_SwapChainImages.size(); }
+        const std::vector<vk::Image>& GetImages() const { return m_SwapChainImages; }
+        const std::vector<std::optional<vk::raii::ImageView>>& GetImageViews() const { return m_SwapChainImageViews; }
+        const std::vector<std::optional<vk::raii::Framebuffer>>& GetFramebuffers() const { return m_SwapChainFramebuffers; }
+
+    public: // Static Methods
+
+        static SwapChainSupport GetSwapchainSupport(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface);
+        static vk::SurfaceFormatKHR ChooseSwapchainFormat(const std::vector<vk::SurfaceFormatKHR>& formats);
+        static vk::PresentModeKHR ChooseSwapchainPresentMode(const std::vector<vk::PresentModeKHR>& present_modes);
+        static vk::Extent2D ChooseSwapchainExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
 
         static uint8_t s_MinImageCount;
 
@@ -58,15 +68,12 @@ namespace BC
 
         SwapchainSpecification m_Specification;
 
-        VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
-        VkRenderPass m_RenderPass = VK_NULL_HANDLE;
+        std::optional<vk::raii::SwapchainKHR> m_Swapchain{};
+        std::optional<vk::raii::RenderPass> m_RenderPass{};
 
-        std::vector<VkImage> m_SwapChainImages;
-        std::vector<VkImageView> m_SwapChainImageViews;
-
-        std::vector<VkFramebuffer> m_SwapChainFramebuffers;
-
-
+        std::vector<vk::Image> m_SwapChainImages{};
+        std::vector<std::optional<vk::raii::ImageView>> m_SwapChainImageViews{};
+        std::vector<std::optional<vk::raii::Framebuffer>> m_SwapChainFramebuffers{};
     };
 
 }

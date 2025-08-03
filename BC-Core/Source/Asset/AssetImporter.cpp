@@ -172,31 +172,31 @@ namespace BC
                 return Util::NormaliseFilePathToString(relative_texture_path);
             }
         
-            static inline VkFormat ParseAssimpFormatHint(const aiTexture* embedded_texture)
+            static inline vk::Format ParseAssimpFormatHint(const aiTexture* embedded_texture)
             {
                 std::string hint = embedded_texture->achFormatHint;
 
                 if (hint.empty())
-                    return VK_FORMAT_UNDEFINED;
+                    return vk::Format::eUndefined;
 
-                if (hint == "rgba8888") return VK_FORMAT_R8G8B8A8_UNORM;
-                if (hint == "bgra8888") return VK_FORMAT_B8G8R8A8_UNORM;
-                if (hint == "argb8888") return VK_FORMAT_R8G8B8A8_UNORM;
+                if (hint == "rgba8888") return vk::Format::eR8G8B8A8Unorm;
+                if (hint == "bgra8888") return vk::Format::eB8G8R8A8Unorm;
+                if (hint == "argb8888") return vk::Format::eR8G8B8A8Unorm;
 
-                if (hint == "rgb888")   return VK_FORMAT_R8G8B8_UNORM;
-                if (hint == "bgr888")   return VK_FORMAT_B8G8R8_UNORM;
-                if (hint == "rg88")     return VK_FORMAT_R8G8_UNORM;
-                if (hint == "r8")       return VK_FORMAT_R8_UNORM;
+                if (hint == "rgb888")   return vk::Format::eR8G8B8Unorm;
+                if (hint == "bgr888")   return vk::Format::eB8G8R8Unorm;
+                if (hint == "rg88")     return vk::Format::eR8G8Unorm;
+                if (hint == "r8")       return vk::Format::eR8Unorm;
 
-                if (hint == "rgba4444") return VK_FORMAT_R4G4B4A4_UNORM_PACK16;
-                if (hint == "rgba5551") return VK_FORMAT_R5G5B5A1_UNORM_PACK16;
-                if (hint == "argb1555") return VK_FORMAT_B5G5R5A1_UNORM_PACK16;
-                if (hint == "rgba5650") return VK_FORMAT_R5G6B5_UNORM_PACK16;
+                if (hint == "rgba4444") return vk::Format::eR4G4B4A4UnormPack16;
+                if (hint == "rgba5551") return vk::Format::eR5G5B5A1UnormPack16;
+                if (hint == "argb1555") return vk::Format::eB5G5R5A1UnormPack16;
+                if (hint == "rgba5650") return vk::Format::eR5G6B5UnormPack16;
 
-                if (hint == "rgba1010102") return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+                if (hint == "rgba1010102") return vk::Format::eA2B10G10R10UnormPack32;
 
                 BC_CORE_WARN("ParseAssimpFormatHint: Unknown embedded texture format hint: '{}'", hint);
-                return VK_FORMAT_UNDEFINED;
+                return vk::Format::eUndefined;
             }
         }
 
@@ -288,7 +288,7 @@ namespace BC
                         specification.height = embedded_texture->mHeight;
                         specification.format = Helpers::ParseAssimpFormatHint(embedded_texture);
 
-                        if (specification.format == VK_FORMAT_UNDEFINED)
+                        if (specification.format == vk::Format::eUndefined)
                         {
                             BC_CORE_WARN("ProcessAssimpTexture: Unsupported embedded texture format hint: '{}'.", embedded_texture->achFormatHint);
                             return;

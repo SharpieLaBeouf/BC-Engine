@@ -355,26 +355,26 @@ namespace BC
 
 			ImTextureID first_button_image = nullptr;
 			ImTextureID second_button_image = nullptr;
-			ImTextureID third_button_image = m_PauseButton->GetDescriptor();
+			ImTextureID third_button_image = **m_PauseButton->GetImGuiDescriptorSet();
 
 			switch (m_SceneState)
 			{
 				case SceneState_Edit:
 				{
-					first_button_image 		= static_cast<ImTextureID>(m_PlayButton->GetDescriptor());
-					second_button_image 	= static_cast<ImTextureID>(m_SimButton->GetDescriptor());
+					first_button_image 		= static_cast<ImTextureID>(**m_PlayButton->GetImGuiDescriptorSet());
+					second_button_image 	= static_cast<ImTextureID>(**m_SimButton->GetImGuiDescriptorSet());
 					break;
 				}
 				case SceneState_Play:
 				{
-					first_button_image 		= static_cast<ImTextureID>(m_StopButton->GetDescriptor());
-					second_button_image 	= static_cast<ImTextureID>(m_StepButton->GetDescriptor());
+					first_button_image 		= static_cast<ImTextureID>(**m_StopButton->GetImGuiDescriptorSet());
+					second_button_image 	= static_cast<ImTextureID>(**m_StepButton->GetImGuiDescriptorSet());
 					break;
 				}
 				case SceneState_Sim:
 				{
-					first_button_image 		= static_cast<ImTextureID>(m_StopButton->GetDescriptor());
-					second_button_image 	= static_cast<ImTextureID>(m_StepButton->GetDescriptor());
+					first_button_image 		= static_cast<ImTextureID>(**m_StopButton->GetImGuiDescriptorSet());
+					second_button_image 	= static_cast<ImTextureID>(**m_StepButton->GetImGuiDescriptorSet());
 					break;
 				}
 			}

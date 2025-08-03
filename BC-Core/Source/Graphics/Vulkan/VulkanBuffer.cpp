@@ -7,26 +7,34 @@
 namespace BC
 {
 	VulkanBuffer::VulkanBuffer(VmaAllocator allocator,
-	                           VkDeviceSize size,
-	                           VkBufferUsageFlags usage,
+	                           vk::DeviceSize size,
+	                           vk::BufferUsageFlags usage,
 	                           VmaMemoryUsage memory_usage,
 	                           VmaAllocationCreateFlags alloc_flags)
 	    : m_Allocator(allocator), m_Size(size)
 	{
-		assert(allocator && "VulkanBuffer requires a valid VmaAllocator");
+		BC_THROW(allocator, "VulkanBuffer::VulkanBuffer: Requires a Valid VmaAllocator.");
 
-		VkBufferCreateInfo buffer_info{};
-		buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		buffer_info.size = size;
-		buffer_info.usage = usage;
-		buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		vk::BufferCreateInfo buffer_info{};
+		buffer_info.setSize(size);
+		buffer_info.setUsage(usage);
+		buffer_info.setSharingMode(vk::SharingMode::eExclusive);
 
 		VmaAllocationCreateInfo alloc_info{};
 		alloc_info.usage = memory_usage;
 		alloc_info.flags = alloc_flags;
 
-		if (vmaCreateBuffer(allocator, &buffer_info, &alloc_info, &m_Buffer, &m_Allocation, nullptr) != VK_SUCCESS)
-			throw std::runtime_error("Failed to create VulkanBuffer!");
+		VkBuffer raw_buffer = VK_NULL_HANDLE;
+		BC_THROW(vmaCreateBuffer(
+			allocator,
+			buffer_info,
+			&alloc_info,
+			&raw_buffer,
+			&m_Allocation,
+			nullptr
+		) == VK_SUCCESS, "VulkanBuffer::VulkanBuffer: Failed to Create Vulkan Buffer.");
+
+		m_Buffer = raw_buffer;
 	}
 
 	VulkanBuffer::~VulkanBuffer()
@@ -59,22 +67,42 @@ namespace BC
 		return *this;
 	}
 
-	void VulkanBuffer::Upload(const void* data, VkDeviceSize size, VkDeviceSize offset)
+	void VulkanBuffer::Upload(const void* data, vk::DeviceSize size, vk::DeviceSize offset)
 	{
-		assert(data && "Upload data is null!");
-		assert((offset + size) <= m_Size && "Upload size exceeds buffer bounds");
+		BC_THROW(data, "VulkanBuffer::Upload: Upload Data is NULL.");
+		BC_THROW((offset + size) <= m_Size, "VulkanBuffer::Upload: Upload Size Exceeds Buffer Bounds.");
 
 		void* dst = Map();
+		if (!dst)
+		{
+			BC_CORE_WARN("VulkanBuffer::Upload: Buffer is not host-visible.");
+			return;
+		}
+
 		std::memcpy(static_cast<char*>(dst) + offset, data, static_cast<size_t>(size));
-		Unmap(); // Optional: you could keep it mapped for persistent buffers
+		Unmap();
+	}
+
+	bool VulkanBuffer::IsHostVisible() const
+	{
+		VmaAllocationInfo alloc_info;
+		vmaGetAllocationInfo(m_Allocator, m_Allocation, &alloc_info);
+		return (alloc_info.memoryType & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
 	}
 
 	void* VulkanBuffer::Map()
 	{
+		if (!IsHostVisible())
+		{
+			BC_CORE_WARN("VulkanBuffer::Map: Buffer is not host-visible.");
+			return nullptr;
+		}
+
 		if (!m_MappedPtr)
 		{
 			vmaMapMemory(m_Allocator, m_Allocation, &m_MappedPtr);
 		}
+		
 		return m_MappedPtr;
 	}
 
@@ -89,7 +117,7 @@ namespace BC
 
 	void VulkanBuffer::Cleanup()
 	{
-		if (m_Buffer != VK_NULL_HANDLE && m_Allocation)
+		if (m_Buffer && m_Allocation)
 		{
 			vmaDestroyBuffer(m_Allocator, m_Buffer, m_Allocation);
 			m_Buffer = VK_NULL_HANDLE;
@@ -99,48 +127,29 @@ namespace BC
 		}
 	}
 
-    VulkanBuffer VulkanBuffer::Clone(VkCommandPool cmd_pool, VkQueue queue, VkBufferUsageFlags usage) const
+    VulkanBuffer VulkanBuffer::Clone(vk::BufferUsageFlags usage, VmaMemoryUsage memory_usage) const
     {
         VulkanBuffer clone
         (
             m_Allocator,
             m_Size,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
-            VMA_MEMORY_USAGE_GPU_ONLY
+            vk::BufferUsageFlagBits::eTransferDst | usage,
+            memory_usage
         );
 
         // Allocate and record copy command
-        VkCommandBufferAllocateInfo alloc_info{};
-        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        alloc_info.commandPool = cmd_pool;
-        alloc_info.commandBufferCount = 1;
+		auto vulkan_core = Application::GetVulkanCore();
+		auto& cmd_pool = vulkan_core->GetThreadCommandPool();
+		auto cmd_buffer = vulkan_core->BeginSingleUseCommandBuffer(cmd_pool);
 
-        VkCommandBuffer cmd_buf;
-        vkAllocateCommandBuffers(Application::GetVulkanCore()->GetLogicalDevice(), &alloc_info, &cmd_buf);
+        vk::BufferCopy copy_region = {};
+		copy_region.setSrcOffset(0);
+		copy_region.setDstOffset(0);
+		copy_region.setSize((m_Size + 3) & ~vk::DeviceSize(3)); // Align to 4 bytes
 
-        VkCommandBufferBeginInfo begin_info{};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		cmd_buffer.copyBuffer(m_Buffer, clone.m_Buffer, copy_region);
 
-        vkBeginCommandBuffer(cmd_buf, &begin_info);
-
-        VkBufferCopy copy_region{};
-        copy_region.srcOffset = 0;
-        copy_region.dstOffset = 0;
-        copy_region.size = m_Size;
-        vkCmdCopyBuffer(cmd_buf, m_Buffer, clone.m_Buffer, 1, &copy_region);
-
-        vkEndCommandBuffer(cmd_buf);
-
-        VkSubmitInfo submit_info{};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cmd_buf;
-
-        vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(queue);
-        vkFreeCommandBuffers(Application::GetVulkanCore()->GetLogicalDevice(), cmd_pool, 1, &cmd_buf);
+		vulkan_core->EndSingleUseCommandBuffer(vulkan_core->GetGraphicsQueue(), cmd_pool, cmd_buffer);
 
         return clone;
     }

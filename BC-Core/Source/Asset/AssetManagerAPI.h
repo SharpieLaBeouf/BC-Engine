@@ -56,6 +56,29 @@ namespace BC
             Application::GetProject()->GetAssetManager()->ClearRuntimeAssets();
         }
 
+        static AssetHandle GetAssetHandle(const std::filesystem::path& asset_path)
+        {
+            if (!std::filesystem::exists(asset_path))
+            {
+                return NULL_GUID;
+            }
+
+            std::filesystem::path meta_data_file_path = asset_path.string() + ".meta";
+            if (!std::filesystem::exists(meta_data_file_path))
+            {
+                return NULL_GUID;
+            }
+
+            const auto& meta_data = Application::GetProject()->GetAssetManager()->GetMetaData(meta_data_file_path);
+
+            if (meta_data.handle == PLACEHOLDER_0_GUID)
+            {
+                return NULL_GUID;
+            }
+
+            return meta_data.handle;
+        }
+
     };
 
 }
