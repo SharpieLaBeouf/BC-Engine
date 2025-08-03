@@ -289,7 +289,7 @@ namespace BC
 
             struct DeviceCandidate
             {
-                vk::raii::PhysicalDevice device;
+                vk::raii::PhysicalDevice* device;
                 int score;
             };
             
@@ -340,7 +340,7 @@ namespace BC
                 VK_KHR_MAINTENANCE3_EXTENSION_NAME
             };
             
-            for (const auto& device : m_PhysicalDevices) 
+            for (auto& device : m_PhysicalDevices) 
             {
                 vk::PhysicalDeviceProperties properties = device.getProperties();
                 vk::PhysicalDeviceFeatures features = device.getFeatures();
@@ -363,7 +363,7 @@ namespace BC
 
                 score += 50; // Add score for having required extensions
             
-                candidates.push_back({ device, score });
+                candidates.push_back({ &device, score });
             }
             
             BC_THROW(!candidates.empty(), "VulkanCore::InitDevice: No Suitable Physical Device Found.");
@@ -375,7 +375,7 @@ namespace BC
             m_SelectedDeviceIndex = -1;
             for (size_t i = 0; i < m_PhysicalDevices.size(); ++i) 
             {
-                if (m_PhysicalDevices[i] == candidates[0].device) 
+                if (&m_PhysicalDevices[i] == candidates[0].device) 
                 {
                     m_SelectedDeviceIndex = i;
                     break;
