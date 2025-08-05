@@ -1,6 +1,8 @@
 #pragma once
 #include "BC.h"
 
+#include "Asset/AssetFileWatcher.h"
+
 #include "Panels/PanelBase.h"
 #include "Panels/AnimatorPanel.h"
 #include "Panels/AssetRegistryPanel.h"
@@ -58,6 +60,8 @@ namespace BC
 
         EditorCamera* GetEditorCamera() { return &m_Camera; }
 
+        auto& GetAssetFileWatcher() { return m_AssetFileWatcher; }
+
     private:
 
         void OpenScene(bool additive, const std::filesystem::path& scene_file_path = "");
@@ -87,6 +91,8 @@ namespace BC
         std::shared_ptr<Texture2D> m_StopButton = nullptr;
         std::shared_ptr<Texture2D> m_SimButton = nullptr;
         std::shared_ptr<Texture2D> m_StepButton = nullptr;
+
+        AssetFileWatcher m_AssetFileWatcher{};
 
     public:
 

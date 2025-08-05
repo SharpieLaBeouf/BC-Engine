@@ -76,6 +76,8 @@ namespace BC
 		m_StopButton = Texture2D::CreateTexture("Resources/Icons/StopButton.png");
 		m_SimButton = Texture2D::CreateTexture("Resources/Icons/SimulateButton.png");
 		m_StepButton = Texture2D::CreateTexture("Resources/Icons/StepButton.png");
+
+		m_AssetFileWatcher.StartWatching(Application::GetProject()->GetDirectory() / "Assets");
 	}
 	
 	void EditorLayer::OnDetach()
@@ -94,6 +96,15 @@ namespace BC
 		for (auto& [type, panel] : m_Panels)
 		{
 			panel->OnUpdate();
+		}
+
+		// Poll Update Once Every Second
+		static float asset_update_timer = 0.0f;
+		asset_update_timer += Time::GetDeltaTime();
+		if (asset_update_timer >= 5.0f)
+		{
+			asset_update_timer = 0.0f;
+			m_AssetFileWatcher.PollEvents();
 		}
 	}
 
@@ -222,6 +233,8 @@ namespace BC
 								}
 
 								Application::GetProject()->SaveProject();
+
+								m_AssetFileWatcher.StartWatching(Application::GetProject()->GetDirectory() / "Assets");
 							}
 						}
 
@@ -238,6 +251,8 @@ namespace BC
 						if (ImGui::MenuItem("Open Project")) 
 						{
 							// TODO: Implement
+							
+							m_AssetFileWatcher.StartWatching(Application::GetProject()->GetDirectory() / "Assets");
 						}
 
 						if (ImGui::MenuItem("Open Scene", "Ctrl+O")) 

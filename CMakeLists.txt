@@ -74,13 +74,6 @@ add_subdirectory(External/assimp)
 set_target_properties(assimp PROPERTIES FOLDER "External/assimp")
 
 # ---------------------------------------------------------------------------
-# External: EFSW
-# ---------------------------------------------------------------------------
-add_subdirectory(External/efsw)
-set_target_properties(efsw PROPERTIES FOLDER "External/efsw")
-set_target_properties(efsw-static PROPERTIES FOLDER "External/efsw")
-
-# ---------------------------------------------------------------------------
 # External: EnTT (Header-only)
 # ---------------------------------------------------------------------------
 add_subdirectory(External/entt)

@@ -1,6 +1,7 @@
 #include "BC_PCH.h"
 #include "ContentBrowserPanel.h"
 
+#include "BC-Editor.h"
 
 namespace BC
 {
@@ -199,6 +200,14 @@ namespace BC
 
     void ContentBrowserPanel::DrawTopNavigation()
     {
+		/// Refresh Asset Directory
+		if (ImGui::ImageButton("##ContentBrowser_RefreshButton", (ImTextureID)**m_RefreshIcon->GetImGuiDescriptorSet(), { 16.0f, 16.0f }, { 0, 1 }, { 1, 0 }))
+		{
+			m_EditorLayer->GetAssetFileWatcher().PollEvents();
+		}
+
+		ImGui::SameLine();
+
         std::filesystem::path current_lexical_normal = GetCurrentDirectory().lexically_normal();
         std::filesystem::path parent_lexical_normal;
 

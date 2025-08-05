@@ -15,6 +15,7 @@ namespace BC
         {
 		    m_FileIcon = Texture2D::CreateTexture("Resources/Icons/FileIcon.png");
 		    m_FolderIcon = Texture2D::CreateTexture("Resources/Icons/FolderIcon.png");
+		    m_RefreshIcon = Texture2D::CreateTexture("Resources/Icons/RefreshIcon.png");
             SetCurrentDirectory(Application::GetProject()->GetDirectory() / "Assets");
         }
         
@@ -72,6 +73,7 @@ namespace BC
 
         std::shared_ptr<Texture2D> m_FileIcon = nullptr;
         std::shared_ptr<Texture2D> m_FolderIcon = nullptr;
+        std::shared_ptr<Texture2D> m_RefreshIcon = nullptr;
 
         friend class EditorLayer;
 

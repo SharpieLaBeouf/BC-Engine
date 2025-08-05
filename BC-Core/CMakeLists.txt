@@ -36,7 +36,6 @@ target_include_directories(BCEngineCore
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
 
         ${PROJECT_SOURCE_DIR}/External/assimp/include
-        ${PROJECT_SOURCE_DIR}/External/efsw/include
         ${PROJECT_SOURCE_DIR}/External/entt/src
         ${PROJECT_SOURCE_DIR}/External/glfw/include
         ${PROJECT_SOURCE_DIR}/External/glm/glm
@@ -64,7 +63,6 @@ target_link_libraries(BCEngineCore
         EnTT
         glfw
         assimp
-        efsw
         imgui
         imguizmo
         imgui_node_editor

@@ -1,8 +1,12 @@
 #pragma once
 
+#include "Core/GUID.h"
+
 #include <string>
 #include <string_view>
 #include <cstdint>
+#include <fstream>
+#include <filesystem>
 
 namespace BC
 {
@@ -11,6 +15,11 @@ namespace BC
 
 namespace BC::Util
 {
+    constexpr uint64_t HashCombine(uint64_t a, uint64_t b)
+    {
+        a ^= b + 0x9e3779b97f4a7c15ull + (a << 12) + (a >> 4);
+        return a;
+    }
 
     // fnv1a_hash
     constexpr uint64_t HashString(const char* str)
@@ -58,6 +67,27 @@ namespace BC::Util
     }
 
     // fnv1a_hash
+    inline uint64_t HashFileContents(const std::filesystem::path& file_path)
+    {
+        if (!std::filesystem::exists(file_path))
+            return NULL_GUID;
+
+        std::ifstream file(file_path, std::ios::binary);
+        if (!file)
+            return NULL_GUID;
+
+        uint64_t hash = 14695981039346656037ull;
+
+        char buffer[4096];
+        while (file.read(buffer, sizeof(buffer)) || file.gcount())
+        {
+            hash = BC::Util::HashCombine(hash, BC::Util::HashBytes(buffer, static_cast<size_t>(file.gcount())));
+        }
+
+        return hash;
+    }
+
+    // fnv1a_hash
     constexpr uint64_t HashStringInsensitive(const char* str)
     {
         uint64_t hash = 14695981039346656037ull;
@@ -89,11 +119,5 @@ namespace BC::Util
     inline uint64_t HashStringInsensitive(const std::string& str)
     {
         return HashStringInsensitive(std::string_view{str});
-    }
-
-    constexpr uint64_t HashCombine(uint64_t a, uint64_t b)
-    {
-        a ^= b + 0x9e3779b97f4a7c15ull + (a << 12) + (a >> 4);
-        return a;
     }
 }
